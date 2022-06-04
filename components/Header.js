@@ -4,7 +4,7 @@ import Link from "next/link";
 
 function Header() {
   return (
-    <nav className="flex p-6 justify-between shadow-lg">
+    <nav className="flex p-4 justify-between shadow-lg fixed w-full z-100 bg-white">
       <Link href="/">
         <p className="text-2xl font-bold cursor-pointer">NFT Marketplace</p>
       </Link>

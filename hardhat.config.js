@@ -17,11 +17,11 @@ module.exports = {
       chainId: 1337,
     },
     rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${process.env.PROJECT_ID}`,
-      accounts: [`0x${process.env.PRIVATE_KEY}`],
+      url: `https://rinkeby.infura.io/v3/${process.env.NEXT_PUBLIC_PROJECT_ID}`,
+      accounts: [`0x${process.env.NEXT_PUBLIC_PRIVATE_KEY}`],
     },
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    apiKey: process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY,
   },
 };

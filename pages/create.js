@@ -3,8 +3,6 @@ import { ethers } from "ethers";
 import { create as ipfsHttpClient } from "ipfs-http-client";
 import Web3Modal from "web3modal";
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
-import ERC721 from "../artifacts/contracts/UITToken721.sol/UITToken721.json";
-import ERC1155 from "../artifacts/contracts/UITToken1155.sol/UITToken1155.json";
 import Router from "next/router";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
@@ -21,8 +19,6 @@ export default function CreateItem() {
     description: "",
     collection: "erc721",
   });
-  const [tokenId, setTokenId] = useState("");
-  const [tokenUri, setTokenUri] = useState("");
   const [message, setMessage] = useState("Create page");
   const [isMinting, setIsMinting] = useState(false);
 
@@ -56,9 +52,7 @@ export default function CreateItem() {
   }
 
   async function createMarketItem() {
-    const url = await uploadToIPFS();
-    setTokenUri(url);
-    console.log("Token Uri: ", url);
+    const tokenUri = await uploadToIPFS();
     const { collection } = formInput;
     const web3Modal = new Web3Modal();
     const connection = await web3Modal.connect();
@@ -67,50 +61,31 @@ export default function CreateItem() {
 
     setIsMinting(true);
     try {
+      let tokenId = 0;
       let contract = new ethers.Contract(
         marketplaceAddress,
         NFTMarketplace.abi,
         signer
       );
-      // let listingPrice = await contract.getListingPrice();
-      // listingPrice = listingPrice.toString();
+      let listingPrice = await contract.getListingPrice();
+      listingPrice = listingPrice.toString();
       setMessage("Creating");
       contract.once("MarketItemCreated", (result) => {
-        console.log("Token ID: ", result.toString());
-        setTokenId(result.toString());
+        tokenId = result.toString();
+        console.log(result.toString());
       });
       let transaction = await contract.createMarketItem(
         collection === "erc1155" ? erc1155Address : erc721Address,
-        url,
+        tokenUri,
         collection === "erc1155" ? true : false
       );
       await transaction.wait();
       setIsMinting(false);
-      let nftContract = new ethers.Contract(
-        collection === "erc1155" ? erc1155Address : erc721Address,
-        collection === "erc1155" ? ERC1155.abi : ERC721.abi,
-        signer
+      Router.push(
+        `/sell?id=${tokenId}&tokenURI=${tokenUri}&isMultiToken=${
+          collection === "erc1155"
+        }`
       );
-      setMessage("Approving");
-      let approval = await nftContract.setParentApproval();
-      await approval.wait();
-      const listingPrice = ethers.utils.parseUnits("0.025", "ether");
-      const auctionPrice = ethers.utils.parseUnits("0.01", "ether");
-      setMessage("Listing");
-      let auction = await contract.listAuctionItem(
-        6,
-        1654336065,
-        1654350065,
-        auctionPrice,
-        {
-          value: listingPrice,
-          gasLimit: 1000000,
-          gasPrice: ethers.utils.parseUnits("1.0", "gwei"),
-        }
-      );
-      await auction.wait();
-      setMessage("Done");
-      // Router.push(`/sell?id=${tokenId}&tokenURI=${tokenUri}`);
     } catch (error) {
       console.log("Unknown error: ", error);
       setIsMinting(false);

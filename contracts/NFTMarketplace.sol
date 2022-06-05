@@ -154,7 +154,6 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
   function endAuction(uint256 tokenId) external payable nonReentrant {
     require(block.timestamp > idMarketItemMapping[tokenId].auctionInfo.endAt, "Auction is still ongoing!");
     require(!idMarketItemMapping[tokenId].bidded, "Auction already ended!");
-    address seller = idMarketItemMapping[tokenId].seller;
     if (idMarketItemMapping[tokenId].auctionInfo.highestBidder != address(0)) { // Transfer token to winner
         for (uint i = 0; i < idMarketItemMapping[tokenId].auctionInfo.bids.length; i++) {
           if (idMarketItemMapping[tokenId].auctionInfo.bids[i].bid > 0) {
@@ -166,11 +165,11 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
         transferToken(address(this), idMarketItemMapping[tokenId].auctionInfo.highestBidder, tokenId, idMarketItemMapping[tokenId].nftContract, idMarketItemMapping[tokenId].isMultiToken);
     } else { // Transfer token to seller
         transferToken(address(this), idMarketItemMapping[tokenId].seller, tokenId, idMarketItemMapping[tokenId].nftContract, idMarketItemMapping[tokenId].isMultiToken);
-        idMarketItemMapping[tokenId].owner = payable(seller);
+        idMarketItemMapping[tokenId].owner = payable(idMarketItemMapping[tokenId].seller);
     }
     idMarketItemMapping[tokenId].seller = payable(address(0));
     idMarketItemMapping[tokenId].bidded = true;
-    emit MarketItemAuctionEnded(tokenId, idMarketItemMapping[tokenId].nftContract, seller, idMarketItemMapping[tokenId].isMultiToken, idMarketItemMapping[tokenId].auctionInfo.highestBidder, idMarketItemMapping[tokenId].auctionInfo.highestBid, block.timestamp);
+    emit MarketItemAuctionEnded(tokenId, idMarketItemMapping[tokenId].nftContract, idMarketItemMapping[tokenId].owner, idMarketItemMapping[tokenId].isMultiToken, idMarketItemMapping[tokenId].auctionInfo.highestBidder, idMarketItemMapping[tokenId].auctionInfo.highestBid, block.timestamp);
   }
   
   function createMarketSale(uint256 tokenId) external payable nonReentrant {
@@ -231,6 +230,125 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
     return (_items, cursor + length, _totalItemCount);
   }
 
+  /* Returns all available market items */
+  function fetchAvailableMarketItems() public view returns (MarketItem[] memory) {
+    uint totalItemCount = _tokenIds.current();
+    uint itemCount = 0;
+    uint currentIndex = 0;
+
+    for (uint i = 0; i < totalItemCount; i++) {
+      if (idMarketItemMapping[i + 1].sold == false || (idMarketItemMapping[i + 1].bidded == false && idMarketItemMapping[i + 1].auctionInfo.endAt > block.timestamp && idMarketItemMapping[i + 1].auctionInfo.startAt < block.timestamp)) {
+        itemCount += 1;
+      }
+    }
+
+    MarketItem[] memory items = new MarketItem[](itemCount);
+    for (uint i = 0; i < totalItemCount; i++) {
+      if (idMarketItemMapping[i + 1].sold == false || (idMarketItemMapping[i + 1].bidded == false && idMarketItemMapping[i + 1].auctionInfo.endAt > block.timestamp && idMarketItemMapping[i + 1].auctionInfo.startAt < block.timestamp)) {
+        uint currentId = i + 1;
+        MarketItem storage currentItem = idMarketItemMapping[currentId];
+        items[currentIndex] = currentItem;
+        currentIndex += 1;
+      }
+    }
+    return items;
+  }
+
+  /* Returns all available bidded auction */
+  function fetchAvailableBiddedAuction() public view returns (MarketItem[] memory) {
+    uint totalItemCount = _tokenIds.current();
+    uint itemCount = 0;
+    uint currentIndex = 0;
+
+    for (uint i = 0; i < totalItemCount; i++) {
+      if (idMarketItemMapping[i + 1].sold == true && idMarketItemMapping[i + 1].bidded == false && idMarketItemMapping[i + 1].auctionInfo.startAt < block.timestamp && idMarketItemMapping[i + 1].auctionInfo.highestBidder != address(0)) {
+        if (idMarketItemMapping[i + 1].auctionInfo.highestBidder == msg.sender) {
+          itemCount += 1;
+        } else {
+          Bid[] memory bids = idMarketItemMapping[i + 1].auctionInfo.bids;
+          for (uint j = 0; j < bids.length; j++) {
+            if (bids[j].bidder == msg.sender) {
+              itemCount += 1;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    MarketItem[] memory items = new MarketItem[](itemCount);
+    for (uint i = 0; i < totalItemCount; i++) {
+      if (idMarketItemMapping[i + 1].sold == true && idMarketItemMapping[i + 1].bidded == false && idMarketItemMapping[i + 1].auctionInfo.startAt < block.timestamp && idMarketItemMapping[i + 1].auctionInfo.highestBidder != address(0)) {
+        if (idMarketItemMapping[i + 1].auctionInfo.highestBidder == msg.sender) {
+          uint currentId = i + 1;
+          MarketItem storage currentItem = idMarketItemMapping[currentId];
+          items[currentIndex] = currentItem;
+          currentIndex += 1;
+        } else {
+          Bid[] memory bids = idMarketItemMapping[i + 1].auctionInfo.bids;
+          for (uint j = 0; j < bids.length; j++) {
+            if (bids[j].bidder == msg.sender) {
+              uint currentId = i + 1;
+              MarketItem storage currentItem = idMarketItemMapping[currentId];
+              items[currentIndex] = currentItem;
+              currentIndex += 1;
+              break;
+            }
+          }
+        }
+      }
+    }
+    return items;
+  }
+
+  /* Returns only items that a user has purchased */
+  function fetchMyNFTs() public view returns (MarketItem[] memory) {
+    uint totalItemCount = _tokenIds.current();
+      uint itemCount = 0;
+      uint currentIndex = 0;
+
+      for (uint i = 0; i < totalItemCount; i++) {
+        if (idMarketItemMapping[i + 1].owner == msg.sender) {
+          itemCount += 1;
+        }
+      }
+
+      MarketItem[] memory items = new MarketItem[](itemCount);
+      for (uint i = 0; i < totalItemCount; i++) {
+        if (idMarketItemMapping[i + 1].owner == msg.sender) {
+          uint currentId = i + 1;
+          MarketItem storage currentItem = idMarketItemMapping[currentId];
+          items[currentIndex] = currentItem;
+          currentIndex += 1;
+        }
+      }
+      return items;
+  }
+
+  /* Returns only items a user has listed */
+  function fetchItemsListed() public view returns (MarketItem[] memory) {
+    uint totalItemCount = _tokenIds.current();
+      uint itemCount = 0;
+      uint currentIndex = 0;
+
+      for (uint i = 0; i < totalItemCount; i++) {
+        if (idMarketItemMapping[i + 1].seller == msg.sender) {
+          itemCount += 1;
+        }
+      }
+
+      MarketItem[] memory items = new MarketItem[](itemCount);
+      for (uint i = 0; i < totalItemCount; i++) {
+        if (idMarketItemMapping[i + 1].seller == msg.sender) {
+          uint currentId = i + 1;
+          MarketItem storage currentItem = idMarketItemMapping[currentId];
+          items[currentIndex] = currentItem;
+          currentIndex += 1;
+        }
+      }
+      return items;
+  }
+
   /**ERC1155 functionality ***********************************************/
   function get1155TokenURI(uint256 _tokenId) public view returns(string memory){
     return _multiToken.getTokenURI(_tokenId);
@@ -252,7 +370,7 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
     if (isMultiToken) {
       IERC1155(_nftContract).safeTransferFrom(_owner, _receiver, _tokenId, 1, '[]');
     } else {
-      IERC721(_nftContract).safeTransferFrom(_owner, _receiver, _tokenId, '[]');
+      IERC721(_nftContract).safeTransferFrom(_owner, _receiver, _tokenId);
     }
   }
 }

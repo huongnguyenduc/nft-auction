@@ -2,13 +2,44 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import Image from "next/image";
-import Router from "next/router";
+import { ethers } from "ethers";
+import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
+import Web3Modal from "web3modal";
+import useAccount from "../components/useAccount";
+
+const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+
+function getShortAddress(address) {
+  if (!address || address.length === 0) return;
+  return (
+    address.substring(0, 6) + "..." + address.substring(address.length - 4)
+  );
+}
 
 function NFTDetail() {
   const router = useRouter();
+  const userAccount = useAccount();
   const { id, tokenURI, isMultiToken } = router.query;
   const [formInput, updateFormInput] = useState({ price: "", image: "" });
-  const { image, price, name, description } = formInput;
+  const [nftData, setNftData] = useState({
+    nftContract: "",
+    seller: "",
+    owner: "",
+    price: "",
+    sold: "",
+    bidded: "",
+    isMultiToken: "",
+    auctionInfo: {
+      startAt: "",
+      endAt: "",
+      highestBid: "",
+      highestBidder: "",
+      highestBidTime: "",
+      bids: [],
+      startingPrice: "",
+    },
+  });
+  const { image, name, description } = formInput;
 
   useEffect(() => {
     fetchNFT();
@@ -16,6 +47,18 @@ function NFTDetail() {
 
   async function fetchNFT() {
     if (!tokenURI) return;
+    const web3Modal = new Web3Modal();
+    const connection = await web3Modal.connect();
+    const provider = new ethers.providers.Web3Provider(connection);
+    const signer = provider.getSigner();
+    let contract = new ethers.Contract(
+      marketplaceAddress,
+      NFTMarketplace.abi,
+      signer
+    );
+    const data = await contract.fetchMarketItem(id);
+    setNftData(data);
+    console.log(data);
     const meta = await axios.get(tokenURI);
     updateFormInput((state) => ({
       ...state,
@@ -33,7 +76,7 @@ function NFTDetail() {
               type="button"
               className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-16 py-4 mr-2"
               onClick={() => {
-                Router.push(
+                router.push(
                   `/sell?id=${id}&tokenURI=${tokenURI}&isMultiToken=${isMultiToken}`
                 );
               }}
@@ -101,7 +144,15 @@ function NFTDetail() {
                 <div className="p-4 border-t bg-blue-50">
                   <div className="flex justify-between mb-3">
                     <p className="text-sm font-normal">Contract Address</p>
-                    <p className="text-sm font-medium">Contract</p>
+                    <p className="text-sm font-medium text-blue-500 cursor-pointer">
+                      <a
+                        target="_blank"
+                        href={`https://rinkeby.etherscan.io/address/${nftData.nftContract}`}
+                        rel="noopener noreferrer"
+                      >
+                        {getShortAddress(nftData.nftContract)}
+                      </a>
+                    </p>
                   </div>
                   <div className="flex justify-between mb-3">
                     <p className="text-sm font-normal">Token ID</p>
@@ -121,8 +172,28 @@ function NFTDetail() {
               </div>
             </div>
             <div className="basis-3/5">
-              <p className="text-3xl font-semibold mb-4">{name}</p>
-              <p className="text-sm font-medium mb-4 text-gray-500">Own by</p>
+              <p className="text-3xl font-semibold mb-8">{name}</p>
+              <div className="flex gap-1">
+                <p className="text-sm font-medium mb-8 text-gray-500 ">
+                  Own by{" "}
+                </p>
+                <div className=""></div>
+                <p className="text-sm font-medium text-blue-500 cursor-pointer">
+                  <a
+                    target="_blank"
+                    href={`https://rinkeby.etherscan.io/address/${
+                      nftData.bidded && nftData.sold
+                        ? nftData.owner
+                        : nftData.seller
+                    }`}
+                    rel="noopener noreferrer"
+                  >
+                    {nftData.bidded && nftData.sold
+                      ? getShortAddress(nftData.owner)
+                      : getShortAddress(nftData.seller)}
+                  </a>
+                </p>
+              </div>
             </div>
           </div>
         </div>

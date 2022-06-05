@@ -7,7 +7,7 @@ import Router from "next/router";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
-const erc721Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
+const erc721Address = process.env.NEXT_PUBLIC_ERC721_CONTRACT_ADDRESS;
 
 const client = ipfsHttpClient("https://ipfs.infura.io:5001/api/v0");
 

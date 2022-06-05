@@ -12,7 +12,7 @@ import Router from "next/router";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
-const erc721Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
+const erc721Address = process.env.NEXT_PUBLIC_ERC721_CONTRACT_ADDRESS;
 import { addDays } from "date-fns";
 
 function isNumeric(str) {
@@ -73,8 +73,8 @@ export default function ResellNFT() {
         const [startTime, endTime] = date;
         let transaction = await contract.listAuctionItem(
           id,
-          startTime.getTime(),
-          endTime.getTime(),
+          Math.floor(startTime.getTime() / 1000),
+          Math.floor(endTime.getTime() / 1000),
           priceFormatted,
           {
             value: listingPrice,

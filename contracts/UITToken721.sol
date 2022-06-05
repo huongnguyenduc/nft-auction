@@ -35,15 +35,14 @@ contract UITToken721 is ERC721URIStorage {
        // using erc 721 to creat NFT
        // mint will create NFT and send it to the address. 
 
-       _name = _name;
-       _symbol = _symbol;
-
-        NFTToken memory token = NFTToken(_id, _name, _symbol, _tokenUri );
-       _safeMint(_owner, _id, ""); 
+       _mint(_owner, _id); 
        _setTokenURI(_id, _tokenUri);
        
        tokensIdscreated.push(_id);
-       idToNFTMapping[_id] = token;
+       idToNFTMapping[_id].id = _id;
+       idToNFTMapping[_id].name = _name;
+       idToNFTMapping[_id].symbol = _symbol;
+       idToNFTMapping[_id].uri = _tokenUri;
     }
 
     function getTokenUri(uint256 tokenId) public view returns(string memory){

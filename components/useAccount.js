@@ -30,6 +30,7 @@ export default function useAccount() {
         (accounts) => {
           console.log("accounts", accounts);
           // No need to set account here, it will be set by the event listener
+          setAccount(accounts[0]);
         },
         (error) => {
           // Handle any UI for errors here, e.g. network error, rejected request, etc.

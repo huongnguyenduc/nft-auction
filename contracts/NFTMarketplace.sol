@@ -223,7 +223,7 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
     }
 
     MarketItem[] memory _items = new MarketItem[](length);
-    for (uint i = cursor; i < length; i++) {
+    for (uint i = cursor; i < length + cursor; i++) {
       MarketItem storage currentItem = idMarketItemMapping[i+1];
       _items[i] = currentItem;
     }
@@ -231,7 +231,7 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
   }
 
   /* Returns all available market items */
-  function fetchAvailableMarketItems() public view returns (MarketItem[] memory) {
+  function fetchAvailableMarketItems() public view returns (MarketItem[] memory items) {
     uint totalItemCount = _tokenIds.current();
     uint itemCount = 0;
     uint currentIndex = 0;
@@ -242,20 +242,20 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
       }
     }
 
-    MarketItem[] memory items = new MarketItem[](itemCount);
+    MarketItem[] memory _items = new MarketItem[](itemCount);
     for (uint i = 0; i < totalItemCount; i++) {
       if (idMarketItemMapping[i + 1].sold == false || (idMarketItemMapping[i + 1].bidded == false && idMarketItemMapping[i + 1].auctionInfo.endAt > block.timestamp && idMarketItemMapping[i + 1].auctionInfo.startAt < block.timestamp)) {
         uint currentId = i + 1;
         MarketItem storage currentItem = idMarketItemMapping[currentId];
-        items[currentIndex] = currentItem;
+        _items[currentIndex] = currentItem;
         currentIndex += 1;
       }
     }
-    return items;
+    return _items;
   }
 
   /* Returns all available bidded auction */
-  function fetchAvailableBiddedAuction() public view returns (MarketItem[] memory) {
+  function fetchAvailableBiddedAuction() public view returns (MarketItem[] memory items) {
     uint totalItemCount = _tokenIds.current();
     uint itemCount = 0;
     uint currentIndex = 0;
@@ -276,13 +276,13 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
       }
     }
 
-    MarketItem[] memory items = new MarketItem[](itemCount);
+    MarketItem[] memory _items = new MarketItem[](itemCount);
     for (uint i = 0; i < totalItemCount; i++) {
       if (idMarketItemMapping[i + 1].sold == true && idMarketItemMapping[i + 1].bidded == false && idMarketItemMapping[i + 1].auctionInfo.startAt < block.timestamp && idMarketItemMapping[i + 1].auctionInfo.highestBidder != address(0)) {
         if (idMarketItemMapping[i + 1].auctionInfo.highestBidder == msg.sender) {
           uint currentId = i + 1;
           MarketItem storage currentItem = idMarketItemMapping[currentId];
-          items[currentIndex] = currentItem;
+          _items[currentIndex] = currentItem;
           currentIndex += 1;
         } else {
           Bid[] memory bids = idMarketItemMapping[i + 1].auctionInfo.bids;
@@ -290,7 +290,7 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
             if (bids[j].bidder == msg.sender) {
               uint currentId = i + 1;
               MarketItem storage currentItem = idMarketItemMapping[currentId];
-              items[currentIndex] = currentItem;
+              _items[currentIndex] = currentItem;
               currentIndex += 1;
               break;
             }
@@ -298,11 +298,11 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
         }
       }
     }
-    return items;
+    return _items;
   }
 
   /* Returns only items that a user has purchased */
-  function fetchMyNFTs() public view returns (MarketItem[] memory) {
+  function fetchMyNFTs() public view returns (MarketItem[] memory items) {
     uint totalItemCount = _tokenIds.current();
       uint itemCount = 0;
       uint currentIndex = 0;
@@ -313,20 +313,20 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
         }
       }
 
-      MarketItem[] memory items = new MarketItem[](itemCount);
+      MarketItem[] memory _items = new MarketItem[](itemCount);
       for (uint i = 0; i < totalItemCount; i++) {
         if (idMarketItemMapping[i + 1].owner == msg.sender) {
           uint currentId = i + 1;
           MarketItem storage currentItem = idMarketItemMapping[currentId];
-          items[currentIndex] = currentItem;
+          _items[currentIndex] = currentItem;
           currentIndex += 1;
         }
       }
-      return items;
+      return _items;
   }
 
   /* Returns only items a user has listed */
-  function fetchItemsListed() public view returns (MarketItem[] memory) {
+  function fetchItemsListed() public view returns (MarketItem[] memory items) {
     uint totalItemCount = _tokenIds.current();
       uint itemCount = 0;
       uint currentIndex = 0;
@@ -337,16 +337,16 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
         }
       }
 
-      MarketItem[] memory items = new MarketItem[](itemCount);
+      MarketItem[] memory _items = new MarketItem[](itemCount);
       for (uint i = 0; i < totalItemCount; i++) {
         if (idMarketItemMapping[i + 1].seller == msg.sender) {
           uint currentId = i + 1;
           MarketItem storage currentItem = idMarketItemMapping[currentId];
-          items[currentIndex] = currentItem;
+          _items[currentIndex] = currentItem;
           currentIndex += 1;
         }
       }
-      return items;
+      return _items;
   }
 
   /**ERC1155 functionality ***********************************************/

@@ -2,8 +2,9 @@ import { ethers } from "ethers";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Web3Modal from "web3modal";
+import Router from "next/router";
 
-const marketplaceAddress = process.env.CONTRACT_ADDRESS;
+const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 import Image from "next/image";
@@ -23,12 +24,14 @@ export default function Home() {
       NFTMarketplace.abi,
       provider
     );
-    const data = await contract.fetchMarketItems();
+    const data = await contract.fetchAllNFTs(0, 20);
 
+    console.log("data", data[0]);
     const items = await Promise.all(
-      data.map(async (i) => {
-        const tokenUri = await contract.tokenURI(i.tokenId);
-        console.log(tokenUri);
+      data[0].map(async (i) => {
+        const tokenUri = i.isMultiToken
+          ? await contract.get1155TokenURI(i.tokenId.toString())
+          : await contract.get721TokenURI(i.tokenId.toString());
         const meta = await axios.get(tokenUri);
         let price = ethers.utils.formatUnits(i.price.toString(), "ether");
         let item = {
@@ -39,6 +42,8 @@ export default function Home() {
           image: meta.data.image,
           name: meta.data.name,
           description: meta.data.description,
+          tokenURI: tokenUri,
+          isMultiToken: i.isMultiToken,
         };
         return item;
       })
@@ -73,7 +78,12 @@ export default function Home() {
           {nfts.map((nft, i) => (
             <div
               key={i}
-              className="border shadow rounded-xl overflow-hidden transition ease-out hover:shadow-lg hover:-translate-y-0.5"
+              className="border cursor-pointer shadow rounded-xl overflow-hidden transition ease-out hover:shadow-lg hover:-translate-y-0.5"
+              onClick={() =>
+                Router.push(
+                  `/detail?id=${nft.tokenId}&tokenURI=${nft.tokenURI}&isMultiToken=${nft.isMultiToken}`
+                )
+              }
             >
               <img src={nft.image} />
               <div className="p-4">

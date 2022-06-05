@@ -13,14 +13,20 @@ import Router from "next/router";
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
 const erc721Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
+import { addDays } from "date-fns";
+
+function isNumeric(str) {
+  if (typeof str != "string") return false; // we only process strings!
+  return (
+    !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+    !isNaN(parseFloat(str))
+  ); // ...and ensure strings of whitespace fail
+}
 
 export default function ResellNFT() {
   const [isCreateAuction, setIsCreateAuction] = useState(false);
   const [validateError, setValidateError] = useState("");
-  const [date, setDate] = useState([
-    new Date(),
-    new Date().setDate(new Date().getDate() + 7),
-  ]);
+  const [date, setDate] = useState([new Date(), addDays(new Date(), 6)]);
   const router = useRouter();
   const { id, tokenURI, isMultiToken } = router.query;
   const [formInput, updateFormInput] = useState({ price: "", image: "" });
@@ -72,20 +78,22 @@ export default function ResellNFT() {
           priceFormatted,
           {
             value: listingPrice,
-            gasLimit: 1000000,
-            gasPrice: ethers.utils.parseUnits("1.0", "gwei"),
+            // gasLimit: 1000000,
+            // gasPrice: ethers.utils.parseUnits("1.0", "gwei"),
           }
         );
         await transaction.wait();
       } else {
         let transaction = await contract.listMarketItem(id, priceFormatted, {
           value: listingPrice,
-          gasLimit: 2000000,
-          gasPrice: ethers.utils.parseUnits("1.0", "gwei"),
+          // gasLimit: 2000000,
+          // gasPrice: ethers.utils.parseUnits("1.0", "gwei"),
         });
         await transaction.wait();
       }
-      Router.push(`/detail?id=${id}`);
+      Router.push(
+        `/detail?id=${id}&tokenURI=${tokenURI}&isMultiToken=${isMultiToken}`
+      );
     } catch (error) {
       console.log("Unknown error: ", error);
     }
@@ -184,7 +192,7 @@ export default function ResellNFT() {
                     value={formInput.price}
                     onChange={(e) => {
                       updateFormInput({ ...formInput, price: e.target.value });
-                      if (!e.target.value.match(new RegExp("[0-9]+"))) {
+                      if (!isNumeric(e.target.value)) {
                         setValidateError("Invalid amount");
                       } else {
                         setValidateError("");
@@ -192,6 +200,9 @@ export default function ResellNFT() {
                     }}
                   />
                 </div>
+                <p className="text-md font-medium mb-3 text-red-600">
+                  {validateError}
+                </p>
                 <p className="text-md font-medium mb-3">Duration</p>
                 <DateRange value={date} onChange={(value) => setDate(value)} />
               </div>
@@ -211,7 +222,7 @@ export default function ResellNFT() {
                     value={formInput.price}
                     onChange={(e) => {
                       updateFormInput({ ...formInput, price: e.target.value });
-                      if (!e.target.value.match(new RegExp("^[0-9]+$"))) {
+                      if (!isNumeric(e.target.value)) {
                         setValidateError("Invalid amount");
                       } else {
                         setValidateError("");
@@ -242,9 +253,11 @@ export default function ResellNFT() {
             <button
               onClick={listNFTForSale}
               className={`font-bold mt-4 ${
-                !formInput.price ? "bg-blue-300" : "bg-blue-500"
+                !formInput.price || !!validateError
+                  ? "bg-blue-300"
+                  : "bg-blue-500"
               } text-white rounded p-4 shadow-lg w-48`}
-              disabled={!formInput.price}
+              disabled={!formInput.price || !!validateError}
             >
               Complete listing
             </button>

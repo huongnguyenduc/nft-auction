@@ -30,19 +30,9 @@ describe("NFTMarketplace", function () {
     const [_, buyerAddress] = await ethers.getSigners();
 
     /* execute sale of token to another user */
-    await nftMarketplace
-      .getPastEvents(
-        "MarketItemCreated",
-        {
-          fromBlock: "latest",
-        },
-        function (error, event) {
-          console.log("event", event);
-        }
-      )
-      .then(function (events) {
-        console.log("event", events); // same results as the optional callback above
-      });
+    await nftMarketplace.on("MarketItemCreated", function (result) {
+      console.log("event", result);
+    });
     await nftMarketplace
       .connect(buyerAddress)
       .createMarketItem(

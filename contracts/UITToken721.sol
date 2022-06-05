@@ -19,7 +19,7 @@ contract UITToken721 is ERC721URIStorage {
 
     mapping (uint256 => NFTToken) idToNFTMapping;
     
-    constructor() ERC721("","") {
+    constructor() ERC721("UITToken721","U721") {
     }
     
     function setParentAddress(address _address) public {

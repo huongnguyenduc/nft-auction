@@ -58,8 +58,8 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
     owner = payable(msg.sender);
   }
 
-  uint256 private MINIMUM_AUCTION_TIME = 1800; // 30 Minutes
-  uint256 private listingPrice = 0.025 ether;
+  uint256 MINIMUM_AUCTION_TIME = 1800; // 30 Minutes
+  uint256 listingPrice = 0.025 ether;
 
   /* Updates the listing price of the contract */
   function updateListingPrice(uint _listingPrice) external payable {
@@ -72,7 +72,7 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
     return listingPrice;
   }
 
-  function createMarketItem(address nftContract, string memory tokenUri, bool isMultiToken) external payable returns (uint256){
+  function createMarketItem(address nftContract, string memory tokenUri, bool isMultiToken) external payable {
     _tokenIds.increment();
     uint256 tokenId = _tokenIds.current();
     if (isMultiToken) {
@@ -80,150 +80,147 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
     } else {
       createNFT721(tokenId, tokenUri, "UITToken", "UIT");
     }
-    MarketItem storage item = idMarketItemMapping[tokenId];
-    item.tokenId = tokenId;
-    item.nftContract = nftContract;
-    item.seller = payable(address(0));
-    item.owner = payable(msg.sender);
-    item.sold = true;
-    item.bidded = true;
-    item.isMultiToken = isMultiToken;
-    idMarketItemMapping[tokenId] = item;
-    emit MarketItemCreated(tokenId, nftContract, item.owner, isMultiToken);
-    return tokenId;
+    idMarketItemMapping[tokenId].tokenId = tokenId;
+    idMarketItemMapping[tokenId].nftContract = nftContract;
+    idMarketItemMapping[tokenId].seller = payable(address(0));
+    idMarketItemMapping[tokenId].owner = payable(msg.sender);
+    idMarketItemMapping[tokenId].sold = true;
+    idMarketItemMapping[tokenId].bidded = true;
+    idMarketItemMapping[tokenId].isMultiToken = isMultiToken;
+    emit MarketItemCreated(tokenId, nftContract, payable(msg.sender), isMultiToken);
   }
 
-  function listAuctionItem(uint256 tokenId, uint256 startTime, uint256 endTime, uint256 startingPrice) external payable returns (uint256){
-    require(msg.value >= listingPrice, "Price must be equal or higher than listing price");
-    MarketItem storage item = idMarketItemMapping[tokenId];
+  function listAuctionItem(uint256 tokenId, uint256 startTime, uint256 endTime, uint256 startingPrice) external payable {
+    require(msg.value == listingPrice, "Price must be equal to listing price");
     require(startingPrice > 0, "Starting price must be larger than 0");
-    require(msg.sender == item.owner, "Only owner can auction");
-    require(item.sold && item.bidded, "NFT is on sale");
+    require(msg.sender == idMarketItemMapping[tokenId].owner, "Only owner can auction");
+    require(idMarketItemMapping[tokenId].sold && idMarketItemMapping[tokenId].bidded, "NFT is on sale");
     require(block.timestamp < endTime, "Ended!");
     require(endTime - startTime > MINIMUM_AUCTION_TIME, "The auction time must be longer than 30 minutes!");
-    item.auctionInfo.startAt = startTime;
-    item.auctionInfo.endAt = endTime;
-    item.auctionInfo.highestBid = 0;
-    item.auctionInfo.highestBidder = address(0);
-    item.auctionInfo.highestBidTime = 0;
-    item.auctionInfo.startingPrice = startingPrice;
-    delete item.auctionInfo.bids;
-    item.bidded = false;
-    item.seller = payable(msg.sender);
-    item.owner = payable(address(this));
-    idMarketItemMapping[tokenId] = item;
-    transferFrom(msg.sender, address(this), tokenId, item.nftContract, item.isMultiToken);
-    emit MarketItemAuctionListed(tokenId, item.nftContract, item.seller, item.isMultiToken, startingPrice, startTime, endTime);
-    return tokenId;
+    idMarketItemMapping[tokenId].auctionInfo.startAt = startTime;
+    idMarketItemMapping[tokenId].auctionInfo.endAt = endTime;
+    idMarketItemMapping[tokenId].auctionInfo.highestBid = 0;
+    idMarketItemMapping[tokenId].auctionInfo.highestBidder = address(0);
+    idMarketItemMapping[tokenId].auctionInfo.highestBidTime = 0;
+    idMarketItemMapping[tokenId].auctionInfo.startingPrice = startingPrice;
+    delete idMarketItemMapping[tokenId].auctionInfo.bids;
+    idMarketItemMapping[tokenId].bidded = false;
+    idMarketItemMapping[tokenId].seller = payable(msg.sender);
+    idMarketItemMapping[tokenId].owner = payable(address(this));
+    transferToken(msg.sender, address(this), tokenId, idMarketItemMapping[tokenId].nftContract, idMarketItemMapping[tokenId].isMultiToken);
+    emit MarketItemAuctionListed(tokenId, idMarketItemMapping[tokenId].nftContract, msg.sender, idMarketItemMapping[tokenId].isMultiToken, startingPrice, startTime, endTime);
   }
 
-  function listMarketItem(uint256 tokenId, uint256 price) external payable returns (uint256) {
+  function listMarketItem(uint256 tokenId, uint256 price) external payable {
     require(msg.value >= listingPrice, "Price must be equal or higher than listing price");
     require(price > 0, "Price must be at least 1 wei");
-    MarketItem storage item = idMarketItemMapping[tokenId];
-    require(item.owner == msg.sender, "Only owner can list item!");
-    item.price = price;
-    item.sold = false;
-    item.seller = payable(msg.sender);
-    item.owner = payable(address(this));
-    idMarketItemMapping[tokenId] = item;
-    transferFrom(msg.sender, address(this), tokenId, item.nftContract, item.isMultiToken);
-    emit MarketItemListed(tokenId, item.nftContract, item.owner, item.isMultiToken, price);
-    return tokenId;
+    require(idMarketItemMapping[tokenId].owner == msg.sender, "Only owner can list item!");
+    idMarketItemMapping[tokenId].price = price;
+    idMarketItemMapping[tokenId].sold = false;
+    idMarketItemMapping[tokenId].seller = payable(msg.sender);
+    idMarketItemMapping[tokenId].owner = payable(address(this));
+    transferToken(msg.sender, address(this), tokenId, idMarketItemMapping[tokenId].nftContract, idMarketItemMapping[tokenId].isMultiToken);
+    emit MarketItemListed(tokenId, idMarketItemMapping[tokenId].nftContract, idMarketItemMapping[tokenId].owner, idMarketItemMapping[tokenId].isMultiToken, price);
   }
 
   function bid(uint256 tokenId) external payable {
-    MarketItem storage item = idMarketItemMapping[tokenId];
-    require(item.seller != msg.sender, "You can't bid your item");
-    require(item.bidded == false, "Item isn't bidding");
-    require(block.timestamp > item.auctionInfo.startAt && block.timestamp < item.auctionInfo.endAt, "Not in bid period!");
-    require(msg.value > item.auctionInfo.highestBid, "Must bid higher the highest bid!");
-    if (item.auctionInfo.highestBidder != address(0)) {
-      Bid memory bidItem = Bid({bidder: item.auctionInfo.highestBidder, bid: item.auctionInfo.highestBid, bidTime: item.auctionInfo.highestBidTime});
-      item.auctionInfo.bids.push(bidItem);
+    require(idMarketItemMapping[tokenId].seller != msg.sender, "You can't bid your item");
+    require(idMarketItemMapping[tokenId].bidded == false, "Item isn't bidding");
+    require(block.timestamp > idMarketItemMapping[tokenId].auctionInfo.startAt && block.timestamp < idMarketItemMapping[tokenId].auctionInfo.endAt, "Not in bid period!");
+    require(msg.value > idMarketItemMapping[tokenId].auctionInfo.highestBid, "Must bid higher the highest bid!");
+    if (idMarketItemMapping[tokenId].auctionInfo.highestBidder != address(0)) {
+      Bid memory bidItem = Bid({bidder: idMarketItemMapping[tokenId].auctionInfo.highestBidder, bid: idMarketItemMapping[tokenId].auctionInfo.highestBid, bidTime: idMarketItemMapping[tokenId].auctionInfo.highestBidTime});
+      idMarketItemMapping[tokenId].auctionInfo.bids.push(bidItem);
     }
-    item.auctionInfo.highestBid = msg.value;
-    item.auctionInfo.highestBidder = msg.sender;
-    item.auctionInfo.highestBidTime = block.timestamp;
-    idMarketItemMapping[tokenId] = item;
-    emit MarketItemBidded(tokenId, item.nftContract, item.seller, msg.sender, msg.value, block.timestamp);
+    idMarketItemMapping[tokenId].auctionInfo.highestBid = msg.value;
+    idMarketItemMapping[tokenId].auctionInfo.highestBidder = msg.sender;
+    idMarketItemMapping[tokenId].auctionInfo.highestBidTime = block.timestamp;
+    emit MarketItemBidded(tokenId, idMarketItemMapping[tokenId].nftContract, idMarketItemMapping[tokenId].seller, msg.sender, msg.value, block.timestamp);
   }
 
   function withdrawBid(uint256 tokenId) external payable nonReentrant {
-    MarketItem storage item = idMarketItemMapping[tokenId];
     uint256 balance = 0;
-    for (uint i = 0; i < item.auctionInfo.bids.length; i++) {
-      if (item.auctionInfo.bids[i].bidder == msg.sender) {
-        balance += item.auctionInfo.bids[i].bid;
-        item.auctionInfo.bids[i].bid = 0;
+    for (uint i = 0; i < idMarketItemMapping[tokenId].auctionInfo.bids.length; i++) {
+      if (idMarketItemMapping[tokenId].auctionInfo.bids[i].bidder == msg.sender) {
+        balance += idMarketItemMapping[tokenId].auctionInfo.bids[i].bid;
+        idMarketItemMapping[tokenId].auctionInfo.bids[i].bid = 0;
       }
     }
     require(balance > 0, "You haven't bidded yet!");
     payable(msg.sender).transfer(balance);
-    idMarketItemMapping[tokenId] = item;
-    emit BidderWithdraw(tokenId, item.nftContract, item.seller, msg.sender, balance);
+    emit BidderWithdraw(tokenId, idMarketItemMapping[tokenId].nftContract, idMarketItemMapping[tokenId].seller, msg.sender, balance);
   }
 
   function endAuction(uint256 tokenId) external payable nonReentrant {
-    MarketItem storage item = idMarketItemMapping[tokenId];
-    require(block.timestamp >= item.auctionInfo.endAt, "Auction is still ongoing!");
-    require(!item.bidded, "Auction already ended!");
-    address seller = item.seller;
-    if (item.auctionInfo.highestBidder != address(0)) { // Transfer token to winner
-        for (uint i = 0; i < item.auctionInfo.bids.length; i++) {
-          if (item.auctionInfo.bids[i].bid > 0) {
-            payable(item.auctionInfo.bids[i].bidder).transfer(item.auctionInfo.bids[i].bid);
+    require(block.timestamp > idMarketItemMapping[tokenId].auctionInfo.endAt, "Auction is still ongoing!");
+    require(!idMarketItemMapping[tokenId].bidded, "Auction already ended!");
+    address seller = idMarketItemMapping[tokenId].seller;
+    if (idMarketItemMapping[tokenId].auctionInfo.highestBidder != address(0)) { // Transfer token to winner
+        for (uint i = 0; i < idMarketItemMapping[tokenId].auctionInfo.bids.length; i++) {
+          if (idMarketItemMapping[tokenId].auctionInfo.bids[i].bid > 0) {
+            payable(idMarketItemMapping[tokenId].auctionInfo.bids[i].bidder).transfer(idMarketItemMapping[tokenId].auctionInfo.bids[i].bid);
           }
         }
-        payable(item.seller).transfer(item.auctionInfo.highestBid);
-        item.owner = payable(item.auctionInfo.highestBidder);
-        transferFrom(address(this), item.auctionInfo.highestBidder, tokenId, item.nftContract, item.isMultiToken);
+        payable(idMarketItemMapping[tokenId].seller).transfer(idMarketItemMapping[tokenId].auctionInfo.highestBid);
+        idMarketItemMapping[tokenId].owner = payable(idMarketItemMapping[tokenId].auctionInfo.highestBidder);
+        transferToken(address(this), idMarketItemMapping[tokenId].auctionInfo.highestBidder, tokenId, idMarketItemMapping[tokenId].nftContract, idMarketItemMapping[tokenId].isMultiToken);
     } else { // Transfer token to seller
-        transferFrom(address(this), item.seller, tokenId, item.nftContract, item.isMultiToken);
-        item.owner = payable(seller);
+        transferToken(address(this), idMarketItemMapping[tokenId].seller, tokenId, idMarketItemMapping[tokenId].nftContract, idMarketItemMapping[tokenId].isMultiToken);
+        idMarketItemMapping[tokenId].owner = payable(seller);
     }
-    item.seller = payable(address(0));
-    item.bidded = true;
-    idMarketItemMapping[tokenId] = item;
-    emit MarketItemAuctionEnded(tokenId, item.nftContract, seller, item.isMultiToken, item.auctionInfo.highestBidder, item.auctionInfo.highestBid, block.timestamp);
+    idMarketItemMapping[tokenId].seller = payable(address(0));
+    idMarketItemMapping[tokenId].bidded = true;
+    emit MarketItemAuctionEnded(tokenId, idMarketItemMapping[tokenId].nftContract, seller, idMarketItemMapping[tokenId].isMultiToken, idMarketItemMapping[tokenId].auctionInfo.highestBidder, idMarketItemMapping[tokenId].auctionInfo.highestBid, block.timestamp);
   }
   
   function createMarketSale(uint256 tokenId) external payable nonReentrant {
-    MarketItem storage item = idMarketItemMapping[tokenId];
-    address payable seller = item.seller;
-    require(item.sold == false, "Item isn't on sale");
-    require(msg.value == item.price, "Buyer must trasfer Ether equal Price of Item");
-    payable(item.seller).transfer(msg.value);
-    item.owner = payable(msg.sender);
-    item.seller = payable(address(0));
-    item.sold = true;
-    idMarketItemMapping[tokenId] = item;
-    transferFrom(address(this), msg.sender, tokenId, item.nftContract, item.isMultiToken);
-    emit MarketItemSold(tokenId, item.nftContract, seller, msg.sender, item.price);
+    address payable seller = idMarketItemMapping[tokenId].seller;
+    require(idMarketItemMapping[tokenId].sold == false, "Item isn't on sale");
+    require(msg.value == idMarketItemMapping[tokenId].price, "Buyer must transfer equal price of item");
+    payable(idMarketItemMapping[tokenId].seller).transfer(msg.value);
+    idMarketItemMapping[tokenId].owner = payable(msg.sender);
+    idMarketItemMapping[tokenId].seller = payable(address(0));
+    idMarketItemMapping[tokenId].sold = true;
+    transferToken(address(this), msg.sender, tokenId, idMarketItemMapping[tokenId].nftContract, idMarketItemMapping[tokenId].isMultiToken);
+    emit MarketItemSold(tokenId, idMarketItemMapping[tokenId].nftContract, seller, msg.sender, idMarketItemMapping[tokenId].price);
   }
 
   function cancelListingItem(uint256 tokenId) external payable {
-    MarketItem storage item = idMarketItemMapping[tokenId];
-    require(msg.sender == item.seller, "Only seller can cancel listing!");
-    require(item.sold == false || item.bidded == false, "Only listed item can cancel listing!");
-    item.sold = true;
-    item.bidded = true;
-    item.owner = payable(msg.sender);
-    item.seller = payable(address(0));
-    idMarketItemMapping[tokenId] = item;
-    transferFrom(address(this), msg.sender, tokenId, item.nftContract, item.isMultiToken);
-    emit MarketItemCancelListed(tokenId, item.nftContract, item.owner, item.isMultiToken, item.price);
+    require(msg.sender == idMarketItemMapping[tokenId].seller, "Only seller can cancel listing!");
+    require(idMarketItemMapping[tokenId].sold == false || idMarketItemMapping[tokenId].bidded == false, "Only listed item can cancel listing!");
+    if (idMarketItemMapping[tokenId].bidded == false) {
+      require(idMarketItemMapping[tokenId].auctionInfo.endAt > block.timestamp, "Cannot cancel when auction already ended!");
+      if (idMarketItemMapping[tokenId].auctionInfo.highestBidder != address(0)) { // Transfer token to winner
+          for (uint i = 0; i < idMarketItemMapping[tokenId].auctionInfo.bids.length; i++) {
+            if (idMarketItemMapping[tokenId].auctionInfo.bids[i].bid > 0) {
+              payable(idMarketItemMapping[tokenId].auctionInfo.bids[i].bidder).transfer(idMarketItemMapping[tokenId].auctionInfo.bids[i].bid);
+            }
+          }
+          payable(idMarketItemMapping[tokenId].auctionInfo.highestBidder).transfer(idMarketItemMapping[tokenId].auctionInfo.highestBid);
+      }
+      idMarketItemMapping[tokenId].bidded = true;
+    } else {
+      idMarketItemMapping[tokenId].sold = true;
+    }
+    idMarketItemMapping[tokenId].owner = payable(msg.sender);
+    idMarketItemMapping[tokenId].seller = payable(address(0));
+    transferToken(address(this), msg.sender, tokenId, idMarketItemMapping[tokenId].nftContract, idMarketItemMapping[tokenId].isMultiToken);
+    emit MarketItemCancelListed(tokenId, idMarketItemMapping[tokenId].nftContract, idMarketItemMapping[tokenId].owner, idMarketItemMapping[tokenId].isMultiToken, idMarketItemMapping[tokenId].price);
   }
 
   function fetchMarketItem(uint256 _id) external view returns(MarketItem memory){
     return idMarketItemMapping[_id];
   }
 
-  function fetchAllNFTs(uint256 cursor, uint256 howMany) external view returns (MarketItem[] memory items, uint256 newCursor) {
-    uint totalItemCount = _tokenIds.current();
+  function fetchAllNFTs(uint256 cursor, uint256 howMany) external view returns (MarketItem[] memory items, uint256 newCursor, uint256 totalItemCount) {
+    uint _totalItemCount = _tokenIds.current();
+    if (cursor >= _totalItemCount) {
+      MarketItem[] memory _emptyItem = new MarketItem[](0);
+      return (_emptyItem, cursor, _totalItemCount);
+    }
     uint256 length = howMany;
-    if (length > totalItemCount - cursor) {
-      length = totalItemCount - cursor;
+    if (length > _totalItemCount - cursor) {
+      length = _totalItemCount - cursor;
     }
 
     MarketItem[] memory _items = new MarketItem[](length);
@@ -231,7 +228,7 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
       MarketItem storage currentItem = idMarketItemMapping[i+1];
       _items[i] = currentItem;
     }
-    return (_items, cursor + length);
+    return (_items, cursor + length, _totalItemCount);
   }
 
   /**ERC1155 functionality ***********************************************/
@@ -251,11 +248,11 @@ contract NFTMarketplace is ReentrancyGuard, ERC1155Holder, ERC721Holder {
     return _nftToken.getTokenUri(_tokenId);
   }
 
-  function transferFrom(address _owner, address _receiver, uint _tokenId, address _nftContract, bool isMultiToken) private {
+  function transferToken(address _owner, address _receiver, uint _tokenId, address _nftContract, bool isMultiToken) private {
     if (isMultiToken) {
       IERC1155(_nftContract).safeTransferFrom(_owner, _receiver, _tokenId, 1, '[]');
     } else {
-      IERC721(_nftContract).transferFrom(_owner, _receiver, _tokenId);
+      IERC721(_nftContract).safeTransferFrom(_owner, _receiver, _tokenId, '[]');
     }
   }
 }

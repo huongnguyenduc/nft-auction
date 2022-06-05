@@ -53,6 +53,7 @@ export default function CreateItem() {
 
   async function createMarketItem() {
     const tokenUri = await uploadToIPFS();
+    console.log("Token Uri: ", tokenUri);
     const { collection } = formInput;
     const web3Modal = new Web3Modal();
     const connection = await web3Modal.connect();
@@ -61,7 +62,6 @@ export default function CreateItem() {
 
     setIsMinting(true);
     try {
-      let tokenId = 0;
       let contract = new ethers.Contract(
         marketplaceAddress,
         NFTMarketplace.abi,
@@ -71,8 +71,13 @@ export default function CreateItem() {
       listingPrice = listingPrice.toString();
       setMessage("Creating");
       contract.once("MarketItemCreated", (result) => {
-        tokenId = result.toString();
-        console.log(result.toString());
+        const tokenId = result.toString();
+        console.log("Token ID: ", tokenId);
+        Router.push(
+          `/sell?id=${tokenId}&tokenURI=${tokenUri}&isMultiToken=${
+            collection === "erc1155"
+          }`
+        );
       });
       let transaction = await contract.createMarketItem(
         collection === "erc1155" ? erc1155Address : erc721Address,
@@ -81,11 +86,6 @@ export default function CreateItem() {
       );
       await transaction.wait();
       setIsMinting(false);
-      Router.push(
-        `/sell?id=${tokenId}&tokenURI=${tokenUri}&isMultiToken=${
-          collection === "erc1155"
-        }`
-      );
     } catch (error) {
       console.log("Unknown error: ", error);
       setIsMinting(false);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import Image from "next/image";
@@ -6,23 +6,10 @@ import { ethers } from "ethers";
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 import Web3Modal from "web3modal";
 import useAccount from "../components/useAccount";
+import { Modal } from "rsuite";
+import { isNumeric, convertWeiToEther, getShortAddress } from "../utils/utils";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
-
-function convertWeiToEther(wei) {
-  if (wei.toString() === "") {
-    return "";
-  }
-  return ethers.utils.formatEther(wei.toString());
-}
-
-function getShortAddress(address, userAddress) {
-  if (!address || address.length === 0) return;
-  if (address.toLowerCase() === userAddress.toLowerCase()) return "you";
-  return (
-    address.substring(0, 6) + "..." + address.substring(address.length - 4)
-  );
-}
 
 const dateOptions = {
   year: "numeric",
@@ -36,9 +23,11 @@ const dateOptions = {
 
 function NFTDetail() {
   const router = useRouter();
-  const userAccount = useAccount();
-  console.log("user", userAccount);
+  const { account: userAccount, balance: userBalance } = useAccount();
   const { id, tokenURI, isMultiToken } = router.query;
+  const [openBidModal, setOpenBidModal] = useState(false);
+  const handleOpenModal = () => setOpenBidModal(true);
+  const handleCloseModal = () => setOpenBidModal(false);
   const [formInput, updateFormInput] = useState({ price: "", image: "" });
   const [nftData, setNftData] = useState({
     nftContract: "",
@@ -59,6 +48,11 @@ function NFTDetail() {
     },
   });
   const { image, name, description } = formInput;
+
+  const [placeBidPrice, setPlaceBidPrice] = useState(
+    nftData?.auctionInfo?.startingPrice
+  );
+  const [validateBidError, setValidateBidError] = useState("");
 
   useEffect(() => {
     fetchNFT();
@@ -125,6 +119,32 @@ function NFTDetail() {
     }
   }
 
+  async function bid() {
+    try {
+      const web3Modal = new Web3Modal();
+      const connection = await web3Modal.connect();
+      const provider = new ethers.providers.Web3Provider(connection);
+      const signer = provider.getSigner();
+      const placeBidPriceFormatted = ethers.utils.parseUnits(
+        placeBidPrice,
+        "ether"
+      );
+      let contract = new ethers.Contract(
+        marketplaceAddress,
+        NFTMarketplace.abi,
+        signer
+      );
+      let transaction = await contract.bid(id, {
+        value: placeBidPriceFormatted,
+      });
+      await transaction.wait();
+      const data = await contract.fetchMarketItem(id);
+      setNftData(data);
+    } catch (error) {
+      console.log("Unknown error: ", error);
+    }
+  }
+
   async function cancelBid() {
     try {
       const web3Modal = new Web3Modal();
@@ -143,16 +163,95 @@ function NFTDetail() {
     }
   }
 
+  const isOwner = useMemo(
+    () =>
+      userAccount.toLowerCase() === nftData.seller.toLowerCase() ||
+      userAccount.toLowerCase() === nftData.owner.toLowerCase(),
+    [userAccount, nftData]
+  );
+
   return (
     <>
-      {userAccount.toLowerCase() === nftData.owner.toLowerCase() ||
-      nftData.seller.toLowerCase() === userAccount.toLowerCase() ? (
+      <Modal open={openBidModal} onClose={handleCloseModal}>
+        <Modal.Header>
+          <Modal.Title className="flex justify-center">
+            <div className="text-center font-semibold text-xl">Place a bid</div>
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="text-lg font-semibold mb-4 mt-4">Price</p>
+          <div className="flex mb-4 items-center">
+            <div className="bg-blue-50 flex gap-2 pr-10 pl-4 py-4 border rounded-l-md">
+              <Image
+                src="https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg"
+                alt="eth-icon"
+                height={30}
+                width={30}
+              />
+              <p>ETH</p>
+            </div>
+            <input
+              placeholder="Amount"
+              className="border rounded p-4 w-full"
+              value={placeBidPrice}
+              onChange={(e) => {
+                setPlaceBidPrice(e.target.value);
+                if (!isNumeric(e.target.value)) {
+                  setValidateBidError("Invalid amount");
+                } else if (
+                  parseFloat(e.target.value) <=
+                    parseFloat(
+                      ethers.utils.formatEther(
+                        nftData?.auctionInfo?.highestBid.toString()
+                      )
+                    ) ||
+                  parseFloat(e.target.value) <=
+                    parseFloat(
+                      ethers.utils.formatEther(
+                        nftData?.auctionInfo?.startingPrice.toString()
+                      )
+                    )
+                ) {
+                  setValidateBidError("Not enough ETH to place bid");
+                } else if (
+                  parseFloat(e.target.value) >
+                  parseFloat(userBalance.toString())
+                ) {
+                  setValidateBidError("Higher than our balance");
+                } else {
+                  setValidateBidError("");
+                }
+              }}
+            />
+          </div>
+          <div className="flex justify-between w-full pb-9 border-b">
+            <p className="text-sm font-medium text-red-600">
+              {validateBidError}
+            </p>
+            <p className="text-sm">
+              Available: {userBalance.toString().substring(0, 6)} ETH
+            </p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="flex justify-center">
+          <button
+            className={`text-white transition ease-in ${
+              !placeBidPrice || !!validateBidError
+                ? "bg-blue-300"
+                : "bg-blue-500 hover:bg-blue-800"
+            }  focus:ring-2 focus:ring-blue-200 font-semibold rounded-lg text-sm px-8 py-4 mr-2`}
+            disabled={!placeBidPrice || !!validateBidError}
+            onClick={bid}
+          >
+            Place bid
+          </button>
+        </Modal.Footer>
+      </Modal>
+      {isOwner ? (
         <div className="fixed bg-blue-50 top-23 w-full z-50">
           <div className="flex justify-center">
             <div className="w-5/6 flex py-2 justify-end">
-              {nftData.sold &&
-              nftData.bidded &&
-              nftData.owner.toLowerCase() === userAccount.toLowerCase() ? (
+              {nftData.sold && nftData.bidded && isOwner ? (
                 <button
                   type="button"
                   className="text-white transition ease-in bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-16 py-4 mr-2"
@@ -336,7 +435,7 @@ function NFTDetail() {
                       />
                       <p className="font-semibold text-3xl">
                         {!nftData.bidded
-                          ? parseInt(
+                          ? parseFloat(
                               nftData.auctionInfo.highestBid.toString()
                             ) > 0
                             ? convertWeiToEther(
@@ -351,29 +450,23 @@ function NFTDetail() {
                       </p>
                     </div>
                     <button
-                      title={
-                        userAccount.toLowerCase() === nftData.seller
-                          ? "You own this item"
-                          : ""
-                      }
+                      title={isOwner ? "You own this item" : ""}
                       type="button"
                       className={`${
-                        userAccount.toLowerCase() ===
-                        nftData.seller.toLowerCase()
+                        isOwner
                           ? "bg-blue-200 cursor-not-allowed"
                           : "bg-blue-700 hover:bg-blue-800"
                       } text-white flex justify-center items-center gap-2 w-3/5  focus:ring-4 focus:ring-blue-300 font-bold rounded-lg text-sm px-16 py-4 mr-2`}
                       onClick={
                         !nftData.bidded
-                          ? () => {}
+                          ? () => {
+                              handleOpenModal();
+                            }
                           : () => {
                               buyNft();
                             }
                       }
-                      disabled={
-                        userAccount.toLowerCase() ===
-                        nftData.seller.toLowerCase()
-                      }
+                      disabled={isOwner}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"

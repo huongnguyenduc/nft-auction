@@ -9,19 +9,12 @@ import ERC721 from "../artifacts/contracts/UITToken721.sol/UITToken721.json";
 import ERC1155 from "../artifacts/contracts/UITToken1155.sol/UITToken1155.json";
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 import Router from "next/router";
+import { isNumeric } from "../utils/utils";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
 const erc721Address = process.env.NEXT_PUBLIC_ERC721_CONTRACT_ADDRESS;
 import { addDays } from "date-fns";
-
-function isNumeric(str) {
-  if (typeof str != "string") return false; // we only process strings!
-  return (
-    !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
-    !isNaN(parseFloat(str))
-  ); // ...and ensure strings of whitespace fail
-}
 
 export default function ResellNFT() {
   const [isCreateAuction, setIsCreateAuction] = useState(false);

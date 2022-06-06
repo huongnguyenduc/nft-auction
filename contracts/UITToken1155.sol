@@ -14,6 +14,9 @@ contract UITToken1155 is ERC1155, Ownable {
     mapping(uint256 => uint256) private _totalSupply;
 
     mapping (uint256 => string) private _tokenURIString;
+
+    string public name = "UITToken1155";
+    string public symbol = "U1155";
     
     constructor() ERC1155("") {}
     

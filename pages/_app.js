@@ -1,5 +1,6 @@
 import "tailwindcss/tailwind.css";
 import "../styles/globals.css";
+import "rsuite/dist/rsuite.min.css";
 import Head from "next/head";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -17,7 +18,7 @@ function MyApp({ Component, pageProps }) {
       </Head>
 
       <Header />
-      <div className="py-16">
+      <div className="py-16 min-h-[93vh]">
         <Component {...pageProps} />
       </div>
       <Footer />

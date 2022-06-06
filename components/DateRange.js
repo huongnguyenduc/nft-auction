@@ -1,7 +1,6 @@
 import React from "react";
 import { DateRangePicker } from "rsuite";
 import { addDays } from "date-fns";
-import "rsuite/dist/rsuite.min.css";
 
 const Ranges = [
   {

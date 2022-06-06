@@ -4,21 +4,22 @@ import axios from "axios";
 import Web3Modal from "web3modal";
 import { useRouter } from "next/router";
 import Image from "next/image";
-import { getShortAddress, timeLeft } from "../utils/utils";
+import { getShortAddress } from "../utils/utils";
 import useAccount from "../components/useAccount";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
+import NFTItem from "../components/NFTItem";
 
 export default function MyAssets() {
   const [nfts, setNfts] = useState([]);
   const { account: userAccount } = useAccount();
+  const [tabState, setTabState] = useState("collected");
   const [loadingState, setLoadingState] = useState("not-loaded");
   const router = useRouter();
   useEffect(() => {
     loadNFTs();
-    loadListedNFTs();
   }, []);
   async function loadNFTs() {
     const web3Modal = new Web3Modal({
@@ -29,36 +30,38 @@ export default function MyAssets() {
     const provider = new ethers.providers.Web3Provider(connection);
     const signer = provider.getSigner();
 
-    const marketplaceContract = new ethers.Contract(
+    const contract = new ethers.Contract(
       marketplaceAddress,
       NFTMarketplace.abi,
       signer
     );
-    const data = await marketplaceContract.fetchMyNFTs();
+    const data = await contract.fetchMyNFTs();
 
     const items = await Promise.all(
       data.map(async (i) => {
-        const tokenURI = await marketplaceContract.tokenURI(i.tokenId);
-        const meta = await axios.get(tokenURI);
+        const tokenUri = i.isMultiToken
+          ? await contract.get1155TokenURI(i.tokenId)
+          : await contract.get721TokenURI(i.tokenId);
+        const meta = await axios.get(tokenUri);
         let price = ethers.utils.formatUnits(i.price.toString(), "ether");
         let item = {
           price,
           tokenId: i.tokenId.toNumber(),
           seller: i.seller,
           owner: i.owner,
+          sold: i.sold,
+          bidded: i.bidded,
+          auctionInfo: i.auctionInfo,
           image: meta.data.image,
           name: meta.data.name,
-          tokenURI,
+          tokenUri: tokenUri,
+          isMultiToken: i.isMultiToken,
         };
         return item;
       })
     );
     setNfts(items);
     setLoadingState("loaded");
-  }
-  function listNFT(nft) {
-    console.log("nft:", nft);
-    router.push(`/sell?id=${nft.tokenId}&tokenURI=${nft.tokenURI}`);
   }
 
   const [listedNfts, setListedNfts] = useState([]);
@@ -97,6 +100,8 @@ export default function MyAssets() {
           auctionInfo: i.auctionInfo,
           image: meta.data.image,
           name: meta.data.name,
+          tokenUri: tokenUri,
+          isMultiToken: i.isMultiToken,
         };
         return item;
       })
@@ -104,6 +109,51 @@ export default function MyAssets() {
 
     setListedNfts(items);
     setLoading("loaded");
+  }
+
+  const [biddingNfts, setBiddingNfts] = useState([]);
+
+  async function loadBiddingNFTs() {
+    const web3Modal = new Web3Modal({
+      network: "mainnet",
+      cacheProvider: true,
+    });
+    const connection = await web3Modal.connect();
+    const provider = new ethers.providers.Web3Provider(connection);
+    const signer = provider.getSigner();
+
+    const contract = new ethers.Contract(
+      marketplaceAddress,
+      NFTMarketplace.abi,
+      signer
+    );
+    const data = await contract.fetchAvailableBiddedAuction();
+
+    const items = await Promise.all(
+      data.map(async (i) => {
+        const tokenUri = i.isMultiToken
+          ? await contract.get1155TokenURI(i.tokenId)
+          : await contract.get721TokenURI(i.tokenId);
+        const meta = await axios.get(tokenUri);
+        let price = ethers.utils.formatUnits(i.price.toString(), "ether");
+        let item = {
+          price,
+          tokenId: i.tokenId.toNumber(),
+          seller: i.seller,
+          owner: i.owner,
+          sold: i.sold,
+          bidded: i.bidded,
+          auctionInfo: i.auctionInfo,
+          image: meta.data.image,
+          name: meta.data.name,
+          tokenUri: tokenUri,
+          isMultiToken: i.isMultiToken,
+        };
+        return item;
+      })
+    );
+
+    setBiddingNfts(items);
   }
   // if (
   //   loading === "loaded" &&
@@ -137,104 +187,71 @@ export default function MyAssets() {
         </div>
         <div className="flex gap-12 py-5">
           <div
-            className={`flex gap-2 border-b-2 border-black items-center pb-2`}
+            onClick={() => {
+              setTabState("collected");
+              loadNFTs();
+            }}
+            className={`flex gap-2 ${
+              tabState === "collected" ? "border-b-2" : ""
+            } border-black items-center pb-2 cursor-pointer`}
           >
             <p className="font-semibold text-lg">Collected</p>
-            <p className="text-lg font-normal">11</p>
+            <p className="text-lg font-normal mt-0">
+              {nfts.length > 0 ? nfts.length : ""}
+            </p>
           </div>
           <div
-            className={`flex gap-2 border-black items-center pb-2 text-gray-500`}
-          >
-            <p className="font-semibold text-lg">Created</p>
-            <p className="text-lg font-normal">11</p>
-          </div>
-          <div
-            className={`flex gap-2 border-black items-center pb-2 text-gray-500`}
-          >
-            <p className="font-semibold text-lg">Bidded</p>
-            <p className="text-lg font-normal">11</p>
-          </div>
-          <div
-            className={`flex gap-2 border-black items-center pb-2 text-gray-500`}
+            onClick={() => {
+              setTabState("onSale");
+              loadListedNFTs();
+            }}
+            className={`flex gap-2 ${
+              tabState === "onSale" ? "border-b-2" : ""
+            } border-black items-center pb-2 text-gray-500 cursor-pointer`}
           >
             <p className="font-semibold text-lg">On sale</p>
-            <p className="text-lg font-normal">11</p>
+            <p className="text-lg font-normal mt-0">
+              {listedNfts.length > 0 ? listedNfts.length : ""}
+            </p>
+          </div>
+          <div
+            onClick={() => {
+              setTabState("bidding");
+              loadBiddingNFTs();
+            }}
+            className={`flex ${
+              tabState === "bidding" ? "border-b-2" : ""
+            } gap-2 border-black items-center pb-2 text-gray-500 cursor-pointer`}
+          >
+            <p className="font-semibold text-lg">Bidding</p>
+            <p className="text-lg font-normal mt-0">
+              {biddingNfts.length > 0 ? biddingNfts.length : ""}
+            </p>
           </div>
         </div>
         <div className="flex">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
-            {nfts.map((nft, i) => (
-              <div
-                key={i}
-                className="border shadow rounded-xl overflow-hidden bg-blue-100 transition ease-out hover:shadow-lg hover:-translate-y-0.5"
-              >
-                <img src={nft.image} className="rounded" />
-                <div className="p-4">
-                  <div className="flex justify-between align-middle">
-                    <p className="text-sm font-semibold">{nft.name}</p>
-                    <button
-                      className="w-16 bg-blue-500 text-white font-bold py-1 px-3 rounded"
-                      onClick={() => listNFT(nft)}
-                    >
-                      List
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {listedNfts.map((nft, i) => (
-              <div
-                key={i}
-                className="border shadow rounded-xl overflow-hidden bg-white transition ease-out hover:shadow-lg hover:-translate-y-0.5"
-              >
-                <img src={nft.image} className="rounded" />
-                <div className="p-3">
-                  <div className="flex justify-between">
-                    <p className="text-xs font-semibold">{nft.name}</p>
-                    <div className="flex flex-col items-end gap-1">
-                      <p className="text-xs font-thin">Min Bid</p>
-                      <div className="flex justify-end">
-                        <p className="text-xs font-semibold pr-1">
-                          {nft.price}
-                        </p>
-                        <Image
-                          src="https://openseauserdata.com/files/accae6b6fb3888cbff27a013729c22dc.svg"
-                          alt="eth-icon"
-                          height={8}
-                          width={8}
-                        />
-                      </div>
-                      <div className="flex justify-end items-center gap-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={1}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <p className="text-xs font-thin">
-                          {nft?.auctionInfo?.endAt
-                            ? timeLeft(
-                                new Date(
-                                  Date.now() +
-                                    parseInt(nft?.auctionInfo?.endAt.toString())
-                                )
-                              )
-                            : ""}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+            {tabState === "collected" ? (
+              nfts.map((nft, i) => (
+                <NFTItem nft={nft} key={nft.toString() + i.toString()} />
+              ))
+            ) : (
+              <></>
+            )}
+            {tabState === "onSale" ? (
+              listedNfts.map((nft, i) => (
+                <NFTItem nft={nft} key={nft.toString() + i.toString()} />
+              ))
+            ) : (
+              <></>
+            )}
+            {tabState === "bidding" ? (
+              biddingNfts.map((nft, i) => (
+                <NFTItem nft={nft} key={nft.toString() + i.toString()} />
+              ))
+            ) : (
+              <></>
+            )}
           </div>
         </div>
       </div>

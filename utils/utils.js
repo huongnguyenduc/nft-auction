@@ -1,3 +1,5 @@
+import { ethers } from "ethers";
+
 export function isNumeric(str) {
   if (typeof str != "string") return false; // we only process strings!
   return (

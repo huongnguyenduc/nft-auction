@@ -10,14 +10,14 @@ function Header() {
       </Link>
       <div className="flex mt-4">
         <Link href="/create">
-          <a className="mr-6 text-gray-400 hover:text-gray-500 font-medium">
+          <p className="mr-6 text-gray-400 hover:text-gray-500 text-base font-medium cursor-pointer">
             Create
-          </a>
+          </p>
         </Link>
-        <Link href="/dashboard">
-          <a className="mr-6 text-gray-400 hover:text-gray-500 font-medium">
-            Dashboard
-          </a>
+        <Link href="/account">
+          <p className="mr-6 text-gray-400 hover:text-gray-500 text-base font-medium mt-0 cursor-pointer">
+            Profile
+          </p>
         </Link>
       </div>
     </nav>

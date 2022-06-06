@@ -7,6 +7,7 @@ import NFTItem from "../components/NFTItem";
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
+import LoadingPage from "../components/Loading";
 
 export default function Home() {
   const [nfts, setNfts] = useState([]);
@@ -43,6 +44,8 @@ export default function Home() {
           tokenUri: tokenUri,
           isMultiToken: i.isMultiToken,
           auctionInfo: i.auctionInfo,
+          sold: i.sold,
+          bidded: i.bidded,
         };
         return item;
       })
@@ -50,6 +53,7 @@ export default function Home() {
     setNfts(items);
     setLoadingState("loaded");
   }
+  if (!nfts) return <LoadingPage />;
   if (loadingState === "loaded" && !nfts.length)
     return <h1 className="px-20 py-10 text-3xl">No items in marketplace</h1>;
   return (

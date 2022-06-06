@@ -6,8 +6,10 @@ import { ethers } from "ethers";
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 import Web3Modal from "web3modal";
 import useAccount from "../components/useAccount";
-import { Modal } from "rsuite";
+import { Modal, Notification } from "rsuite";
 import { isNumeric, convertWeiToEther, getShortAddress } from "../utils/utils";
+import LoadingPage from "../components/Loading";
+import { useToaster } from "rsuite";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
@@ -29,6 +31,13 @@ function NFTDetail() {
   const handleOpenModal = () => setOpenBidModal(true);
   const handleCloseModal = () => setOpenBidModal(false);
   const [formInput, updateFormInput] = useState({ price: "", image: "" });
+  const toaster = useToaster();
+
+  const NotificationUI = (type, message) => (
+    <Notification type={type} header={type} closable>
+      <div className="py-4 px-2">{message}</div>
+    </Notification>
+  );
   const [nftData, setNftData] = useState({
     nftContract: "",
     seller: "",
@@ -169,6 +178,8 @@ function NFTDetail() {
       userAccount.toLowerCase() === nftData.owner.toLowerCase(),
     [userAccount, nftData]
   );
+
+  if (!nftData.nftContract) return <LoadingPage />;
 
   return (
     <>

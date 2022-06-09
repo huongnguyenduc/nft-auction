@@ -1,6 +1,7 @@
 import React from "react";
 import Image from "next/image";
-import { timeLeft, convertWeiToEther } from "../utils/utils";
+import { convertWeiToEther } from "../utils/web3";
+import { timeLeft } from "../utils/utils";
 import Router from "next/router";
 
 const NFTItem = ({ nft }) => {
@@ -28,7 +29,7 @@ const NFTItem = ({ nft }) => {
                 <p className="text-xs font-semibold pr-1">
                   {nft.bidded
                     ? nft.price
-                    : nft.auctionInfo.highestBid
+                    : nft.auctionInfo.highestBid.toString() !== "0"
                     ? convertWeiToEther(nft.auctionInfo.highestBid)
                     : convertWeiToEther(nft.auctionInfo.startingPrice)}
                 </p>

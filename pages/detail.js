@@ -6,8 +6,9 @@ import { ethers } from "ethers";
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 import Web3Modal from "web3modal";
 import useAccount from "../components/useAccount";
-import { Modal, Notification } from "rsuite";
-import { isNumeric, convertWeiToEther, getShortAddress } from "../utils/utils";
+import { Modal } from "rsuite";
+import { isNumeric,  getShortAddress } from "../utils/utils";
+import { convertWeiToEther } from "../utils/web3";
 import LoadingPage from "../components/Loading";
 import { useToaster } from "rsuite";
 
@@ -25,19 +26,14 @@ const dateOptions = {
 
 function NFTDetail() {
   const router = useRouter();
-  const { account: userAccount, balance: userBalance } = useAccount();
   const { id, tokenURI, isMultiToken } = router.query;
+  const { account: userAccount, balance: userBalance } = useAccount();
   const [openBidModal, setOpenBidModal] = useState(false);
   const handleOpenModal = () => setOpenBidModal(true);
   const handleCloseModal = () => setOpenBidModal(false);
   const [formInput, updateFormInput] = useState({ price: "", image: "" });
   const toaster = useToaster();
 
-  const NotificationUI = (type, message) => (
-    <Notification type={type} header={type} closable>
-      <div className="py-4 px-2">{message}</div>
-    </Notification>
-  );
   const [nftData, setNftData] = useState({
     nftContract: "",
     seller: "",
@@ -69,14 +65,15 @@ function NFTDetail() {
 
   async function fetchNFT() {
     if (!tokenURI) return;
-    const web3Modal = new Web3Modal();
-    const connection = await web3Modal.connect();
-    const provider = new ethers.providers.Web3Provider(connection);
-    const signer = provider.getSigner();
+    // const web3Modal = new Web3Modal();
+    // const connection = await web3Modal.connect();
+    // const provider = new ethers.providers.Web3Provider(connection);
+    const network = "rinkeby"; // use rinkeby testnet
+    const provider = ethers.getDefaultProvider(network);
     let contract = new ethers.Contract(
       marketplaceAddress,
       NFTMarketplace.abi,
-      signer
+      provider
     );
     const data = await contract.fetchMarketItem(id);
     setNftData(data);
@@ -192,7 +189,7 @@ function NFTDetail() {
         <Modal.Body>
           <p className="text-lg font-semibold mb-4 mt-4">Price</p>
           <div className="flex mb-4 items-center">
-            <div className="bg-blue-50 flex gap-2 pr-10 pl-4 py-4 border rounded-l-md">
+            <div className="bg-blue-50/30 flex gap-2 pr-10 pl-4 py-4 border rounded-l-md">
               <Image
                 src="https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg"
                 alt="eth-icon"
@@ -259,7 +256,7 @@ function NFTDetail() {
         </Modal.Footer>
       </Modal>
       {isOwner ? (
-        <div className="fixed bg-blue-50 top-23 w-full z-50">
+        <div className="fixed bg-blue-50/30 top-23 w-full z-50">
           <div className="flex justify-center">
             <div className="w-5/6 flex py-2 justify-end">
               {nftData.sold && nftData.bidded && isOwner ? (
@@ -329,7 +326,7 @@ function NFTDetail() {
                   </svg>
                   <p className="text-md font-medium ml-3">Description</p>
                 </div>
-                <div className="p-4 border-t bg-blue-50">
+                <div className="p-4 border-t bg-blue-50/30">
                   <p className="text-sm font-normal">{description}</p>
                 </div>
                 <div className="p-4 w-full flex justify-between">
@@ -349,7 +346,7 @@ function NFTDetail() {
                     <p className="text-md font-medium ml-3">Detail</p>
                   </div>
                 </div>
-                <div className="p-4 border-t bg-blue-50">
+                <div className="p-4 border-t /30">
                   <div className="flex justify-between mb-3">
                     <p className="text-sm font-normal">Contract Address</p>
                     <p className="text-sm font-medium text-blue-500 cursor-pointer">
@@ -433,7 +430,7 @@ function NFTDetail() {
                 {nftData.bidded && nftData.sold ? (
                   <></>
                 ) : (
-                  <div className="bg-blue-50 flex flex-col gap-3 p-4">
+                  <div className="bg-blue-50/30 flex flex-col gap-3 p-4">
                     <p className=" text-gray-500">
                       {!nftData.bidded ? "Minimum bid" : "Current price"}
                     </p>
@@ -527,7 +524,7 @@ function NFTDetail() {
                         <th className="text-left font-normal p-4"></th>
                       </tr>
                     </thead>
-                    <tbody className="bg-blue-50">
+                    <tbody className="bg-blue-50/30">
                       {nftData?.auctionInfo?.bids.map((bidItem) => (
                         <tr key={bidItem.toString()} className="py-2">
                           <td className="flex gap-2 font-semibold p-4">

@@ -14,7 +14,11 @@ const nextConfig = {
   //     "0xf47027a13E7Fbd470c95e867c8285c9AEC023F2F",
   // },
   images: {
-    domains: ["openseauserdata.com"],
+    domains: [
+      "openseauserdata.com",
+      "testnets.opensea.io",
+      "static.opensea.io",
+    ],
   },
   webpack(config) {
     config.module.rules.push({

@@ -6,6 +6,8 @@ import { useRouter } from "next/router";
 import Image from "next/image";
 import { getShortAddress } from "../utils/utils";
 import useAccount from "../components/useAccount";
+import { useWeb3React } from "@web3-react/core";
+import Router from "next/router";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
@@ -13,6 +15,14 @@ import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketp
 import NFTItem from "../components/NFTItem";
 
 export default function MyAssets() {
+  const { isActive } = useWeb3React();
+  useEffect(() => {
+    if (!isActive) {
+      Router.push(`/login?referrer=account`);
+    } else {
+      loadNFTs();
+    }
+  }, [isActive]);
   const [nfts, setNfts] = useState([]);
   const { account: userAccount } = useAccount();
   const [tabState, setTabState] = useState("collected");

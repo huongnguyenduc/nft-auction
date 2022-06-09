@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { create as ipfsHttpClient } from "ipfs-http-client";
 import Web3Modal from "web3modal";
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 import Router from "next/router";
+import { useWeb3React } from "@web3-react/core";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
@@ -12,6 +13,12 @@ const erc721Address = process.env.NEXT_PUBLIC_ERC721_CONTRACT_ADDRESS;
 const client = ipfsHttpClient("https://ipfs.infura.io:5001/api/v0");
 
 export default function CreateItem() {
+  const { isActive } = useWeb3React();
+  useEffect(() => {
+    if (!isActive) {
+      Router.push(`/login?referrer=create`);
+    }
+  }, [isActive]);
   const [fileUrl, setFileUrl] = useState(null);
 
   const [formInput, updateFormInput] = useState({
@@ -191,9 +198,6 @@ export default function CreateItem() {
           )}
           Create
         </button>
-        <label className="block mb-2 text-md font-medium text-gray-900">
-          {message}
-        </label>
       </div>
     </div>
   );

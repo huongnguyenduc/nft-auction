@@ -104,7 +104,7 @@ export default function ResellNFT() {
                 className={`flex flex-col items-center rounded-l-sm flex-1 py-7 border transition ease-in ${
                   isCreateAuction
                     ? "cursor-pointer text-gray-400 hover:text-gray-900"
-                    : "bg-blue-50"
+                    : "bg-blue-50/30"
                 }`}
                 onClick={() => setIsCreateAuction(false)}
               >
@@ -130,7 +130,7 @@ export default function ResellNFT() {
                 onClick={() => setIsCreateAuction(true)}
                 className={`flex flex-col items-center rounded-l-sm flex-1 py-7 border transition ease-in ${
                   isCreateAuction
-                    ? "bg-blue-50"
+                    ? "bg-blue-50/30"
                     : "cursor-pointer text-gray-400 hover:text-gray-900"
                 }`}
               >

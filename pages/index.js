@@ -16,9 +16,11 @@ export default function Home() {
     loadNFTs();
   }, []);
   async function loadNFTs() {
-    const web3Modal = new Web3Modal();
-    const connection = await web3Modal.connect();
-    const provider = new ethers.providers.Web3Provider(connection);
+    // const web3Modal = new Web3Modal();
+    // const connection = await web3Modal.connect();
+    // const provider = new ethers.providers.Web3Provider(connection);
+    const network = "rinkeby"; // use rinkeby testnet
+    const provider = ethers.getDefaultProvider(network);
     const contract = new ethers.Contract(
       marketplaceAddress,
       NFTMarketplace.abi,
@@ -53,7 +55,7 @@ export default function Home() {
     setNfts(items);
     setLoadingState("loaded");
   }
-  if (!nfts) return <LoadingPage />;
+  if (loadingState === "not-loaded") return <LoadingPage />;
   if (loadingState === "loaded" && !nfts.length)
     return <h1 className="px-20 py-10 text-3xl">No items in marketplace</h1>;
   return (

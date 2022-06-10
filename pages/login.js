@@ -4,7 +4,7 @@ import WalletList from "../components/WalletList";
 
 const Login = () => {
   const router = useRouter();
-  const { referrer } = router.query;
+  const { referrer, id, tokenURI, isMultiToken } = router.query;
 
   return (
     <div className="w-full h-full flex justify-center pt-12">
@@ -15,7 +15,18 @@ const Login = () => {
             Connect with one of our available wallet providers or create a new
             one.
           </p>
-          <WalletList referrer={`/${referrer}`} />
+          <WalletList
+            referrer={`/${referrer}${
+              id && tokenURI && isMultiToken
+                ? "?id=" +
+                  id +
+                  "&tokenURI=" +
+                  tokenURI +
+                  "&isMultiToken=" +
+                  isMultiToken
+                : ""
+            }`}
+          />
         </div>
       </div>
     </div>

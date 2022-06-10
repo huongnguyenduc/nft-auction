@@ -82,7 +82,7 @@ function Header() {
         </Drawer.Body>
       </Drawer>
 
-      <nav className="flex p-4 justify-between shadow-lg fixed w-full z-[100000] bg-white">
+      <nav className="flex p-4 justify-between shadow-lg fixed w-full z-[1051] bg-white">
         <Link href="/">
           <p className="text-xl font-bold cursor-pointer">NFT Marketplace</p>
         </Link>

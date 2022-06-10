@@ -5,7 +5,6 @@ import Web3Modal from "web3modal";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import { getShortAddress } from "../utils/utils";
-import useAccount from "../components/useAccount";
 import { useWeb3React } from "@web3-react/core";
 import Router from "next/router";
 
@@ -15,7 +14,7 @@ import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketp
 import NFTItem from "../components/NFTItem";
 
 export default function MyAssets() {
-  const { isActive } = useWeb3React();
+  const { isActive, account: userAccount } = useWeb3React();
   useEffect(() => {
     if (!isActive) {
       Router.push(`/login?referrer=account`);
@@ -24,13 +23,12 @@ export default function MyAssets() {
     }
   }, [isActive]);
   const [nfts, setNfts] = useState([]);
-  const { account: userAccount } = useAccount();
   const [tabState, setTabState] = useState("collected");
   const [loadingState, setLoadingState] = useState("not-loaded");
   const router = useRouter();
   useEffect(() => {
     loadNFTs();
-  }, []);
+  }, [userAccount]);
   async function loadNFTs() {
     const web3Modal = new Web3Modal({
       network: "mainnet",
@@ -239,29 +237,31 @@ export default function MyAssets() {
             </p>
           </div>
         </div>
-        <div className="flex">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
-            {tabState === "collected" ? (
-              nfts.map((nft, i) => (
-                <NFTItem nft={nft} key={nft.toString() + i.toString()} />
-              ))
-            ) : (
-              <></>
-            )}
-            {tabState === "onSale" ? (
-              listedNfts.map((nft, i) => (
-                <NFTItem nft={nft} key={nft.toString() + i.toString()} />
-              ))
-            ) : (
-              <></>
-            )}
-            {tabState === "bidding" ? (
-              biddingNfts.map((nft, i) => (
-                <NFTItem nft={nft} key={nft.toString() + i.toString()} />
-              ))
-            ) : (
-              <></>
-            )}
+        <div className="flex justify-center">
+          <div className="flex max-w-7xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+              {tabState === "collected" ? (
+                nfts.map((nft, i) => (
+                  <NFTItem nft={nft} key={nft.toString() + i.toString()} />
+                ))
+              ) : (
+                <></>
+              )}
+              {tabState === "onSale" ? (
+                listedNfts.map((nft, i) => (
+                  <NFTItem nft={nft} key={nft.toString() + i.toString()} />
+                ))
+              ) : (
+                <></>
+              )}
+              {tabState === "bidding" ? (
+                biddingNfts.map((nft, i) => (
+                  <NFTItem nft={nft} key={nft.toString() + i.toString()} />
+                ))
+              ) : (
+                <></>
+              )}
+            </div>
           </div>
         </div>
       </div>

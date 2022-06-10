@@ -5,12 +5,14 @@ import Image from "next/image";
 import { ethers } from "ethers";
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 import Web3Modal from "web3modal";
-import useAccount from "../components/useAccount";
+import { useWeb3React } from "@web3-react/core";
 import { Modal } from "rsuite";
-import { isNumeric,  getShortAddress } from "../utils/utils";
+import { isNumeric, getShortAddress } from "../utils/utils";
 import { convertWeiToEther } from "../utils/web3";
 import LoadingPage from "../components/Loading";
 import { useToaster } from "rsuite";
+import useBalance from "../components/useBalance";
+import styles from "../components/Modal/Modal.module.css";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
@@ -27,7 +29,9 @@ const dateOptions = {
 function NFTDetail() {
   const router = useRouter();
   const { id, tokenURI, isMultiToken } = router.query;
-  const { account: userAccount, balance: userBalance } = useAccount();
+  const { account: userAccount, provider } = useWeb3React();
+  const userBalance = useBalance(provider, userAccount);
+  // const { balance: userBalance } = useAccount();
   const [openBidModal, setOpenBidModal] = useState(false);
   const handleOpenModal = () => setOpenBidModal(true);
   const handleCloseModal = () => setOpenBidModal(false);
@@ -171,8 +175,11 @@ function NFTDetail() {
 
   const isOwner = useMemo(
     () =>
-      userAccount.toLowerCase() === nftData.seller.toLowerCase() ||
-      userAccount.toLowerCase() === nftData.owner.toLowerCase(),
+      userAccount
+        ? userAccount.toString().toLowerCase() ===
+            nftData.seller.toLowerCase() ||
+          userAccount.toString().toLowerCase() === nftData.owner.toLowerCase()
+        : false,
     [userAccount, nftData]
   );
 
@@ -180,7 +187,11 @@ function NFTDetail() {
 
   return (
     <>
-      <Modal open={openBidModal} onClose={handleCloseModal}>
+      <Modal
+        open={openBidModal}
+        onClose={handleCloseModal}
+        className={styles.customModal}
+      >
         <Modal.Header>
           <Modal.Title className="flex justify-center">
             <div className="text-center font-semibold text-xl">Place a bid</div>
@@ -223,7 +234,7 @@ function NFTDetail() {
                   setValidateBidError("Not enough ETH to place bid");
                 } else if (
                   parseFloat(e.target.value) >
-                  parseFloat(userBalance.toString())
+                  parseFloat(userBalance ? userBalance.toString() : 0)
                 ) {
                   setValidateBidError("Higher than our balance");
                 } else {
@@ -237,7 +248,8 @@ function NFTDetail() {
               {validateBidError}
             </p>
             <p className="text-sm">
-              Available: {userBalance.toString().substring(0, 6)} ETH
+              Available:{" "}
+              {userBalance ? userBalance.toString().substring(0, 6) : 0} ETH
             </p>
           </div>
         </Modal.Body>
@@ -256,7 +268,7 @@ function NFTDetail() {
         </Modal.Footer>
       </Modal>
       {isOwner ? (
-        <div className="fixed bg-blue-50/30 top-23 w-full z-50">
+        <div className="fixed bg-blue-50/30 top-[72px] w-full z-50">
           <div className="flex justify-center">
             <div className="w-5/6 flex py-2 justify-end">
               {nftData.sold && nftData.bidded && isOwner ? (
@@ -540,8 +552,10 @@ function NFTDetail() {
                             {getShortAddress(bidItem?.bidder, userAccount)}
                           </td>
                           <td>
-                            {bidItem?.bidder.toLowerCase() ===
-                            userAccount.toLowerCase() ? (
+                            {!userAccount ? (
+                              <></>
+                            ) : bidItem?.bidder.toLowerCase() ===
+                              userAccount.toLowerCase() ? (
                               <button
                                 onClick={cancelBid}
                                 className="py-2 px-4 border text-sm border-blue-500 bg-white text-blue-600 rounded-md"

@@ -39,5 +39,3 @@ typechain
 
 #Hardhat files
 cache
-artifacts
-next.config.js

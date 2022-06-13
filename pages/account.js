@@ -9,6 +9,8 @@ import { useWeb3React } from "@web3-react/core";
 import Router from "next/router";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
+const erc721Address = process.env.NEXT_PUBLIC_ERC721_CONTRACT_ADDRESS;
 
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 import NFTItem from "../components/NFTItem";
@@ -48,8 +50,8 @@ export default function MyAssets() {
     const items = await Promise.all(
       data.map(async (i) => {
         const tokenUri = i.isMultiToken
-          ? await contract.get1155TokenURI(i.tokenId)
-          : await contract.get721TokenURI(i.tokenId);
+          ? await contract.get1155TokenURI(i.tokenId, erc1155Address)
+          : await contract.get721TokenURI(i.tokenId, erc721Address);
         const meta = await axios.get(tokenUri);
         let price = ethers.utils.formatUnits(i.price.toString(), "ether");
         let item = {
@@ -140,8 +142,8 @@ export default function MyAssets() {
     const items = await Promise.all(
       data.map(async (i) => {
         const tokenUri = i.isMultiToken
-          ? await contract.get1155TokenURI(i.tokenId)
-          : await contract.get721TokenURI(i.tokenId);
+          ? await contract.get1155TokenURI(i.tokenId, erc1155Address)
+          : await contract.get721TokenURI(i.tokenId, erc721Address);
         const meta = await axios.get(tokenUri);
         let price = ethers.utils.formatUnits(i.price.toString(), "ether");
         let item = {
@@ -238,7 +240,7 @@ export default function MyAssets() {
           </div>
         </div>
         <div className="flex justify-center">
-          <div className="flex max-w-7xl">
+          <div className="flex max-w-[1440px]">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
               {tabState === "collected" ? (
                 nfts.map((nft, i) => (

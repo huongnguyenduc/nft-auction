@@ -81,12 +81,43 @@ function Header() {
           <WalletList referrer={referrer} />
         </Drawer.Body>
       </Drawer>
-
-      <nav className="flex p-4 justify-between shadow-lg fixed w-full z-[1051] bg-white">
+      {/* <div className="flex flex-col w-[245px] fixed right-0 top-[73px] shadow-md bg-white z-[1052] rounded-md">
+        <div className="flex gap-2 p-4 items-center border-b">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <p>Profile</p>
+        </div>
+        <div className="flex gap-2 p-4 items-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <p>Setting</p>
+        </div>
+      </div> */}
+      <nav className="flex p-4 justify-between shadow-lg fixed w-full z-[1051] bg-white items-center">
         <Link href="/">
           <p className="text-xl font-bold cursor-pointer">NFT Marketplace</p>
         </Link>
-        <div className="flex mt-4">
+        <div className="flex mt-4 items-center">
           <p
             onClick={() => goToPage("/create")}
             className="mr-6 text-gray-400 hover:text-gray-500 text-base font-medium cursor-pointer"

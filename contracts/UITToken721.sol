@@ -3,45 +3,53 @@ pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract UITToken721 is ERC721URIStorage {
-
+contract UITToken721 is ERC721URIStorage, Ownable {
     address parentAddress;
-
-    uint256[] tokensIdscreated;
-
+    uint256[] tokensIdsCreated;
+    string private collectionName;
+    string private collectionSymbol;
     struct NFTToken{
         uint256 id;
-        string name;
-        string symbol;
         string uri;
     }
 
     mapping (uint256 => NFTToken) idToNFTMapping;
     
-    constructor() ERC721("UITToken721","U721") {
-    }
-    
-    function setParentAddress(address _address) public {
-        parentAddress = _address;
+    constructor(string memory _name, string memory _symbol, address _parentAddress) ERC721(_name, _symbol) {
+        parentAddress = _parentAddress;
+        collectionName = _name;
+        collectionSymbol = _symbol;
     }
 
     function setParentApproval() public {
-        //apprvove parent contract to handle tokens and transactions.
         setApprovalForAll(parentAddress, true);
     }
 
-    function mintNFT(address _owner, uint256 _id, string memory _tokenUri, string memory _name, string memory _symbol) public {
-       // using erc 721 to creat NFT
-       // mint will create NFT and send it to the address. 
+    function name() public view override returns(string memory) {
+        return collectionName;
+    }
 
+    function symbol() public view override returns(string memory) {
+        return collectionSymbol;
+    }
+
+    function setName(string memory _name) public onlyOwner {
+        collectionName = _name;
+    }
+
+    function setSymbol(string memory _symbol) public onlyOwner {
+        collectionSymbol = _symbol;
+    }
+
+    function mintNFT(address _owner, uint256 _id, string memory _tokenUri) public {
+       // using erc 721 to create NFT
+       // mint will create NFT and send it to the address. 
        _mint(_owner, _id); 
        _setTokenURI(_id, _tokenUri);
-       
-       tokensIdscreated.push(_id);
+       tokensIdsCreated.push(_id);
        idToNFTMapping[_id].id = _id;
-       idToNFTMapping[_id].name = _name;
-       idToNFTMapping[_id].symbol = _symbol;
        idToNFTMapping[_id].uri = _tokenUri;
     }
 
@@ -49,21 +57,13 @@ contract UITToken721 is ERC721URIStorage {
         return idToNFTMapping[tokenId].uri;
     }
 
-    function getTokenName(uint256 tokenId) public view returns(string memory){
-        return idToNFTMapping[tokenId].name;
-    }
-
-    function getTokenSymbol(uint256 tokenId) public view returns(string memory){
-        return idToNFTMapping[tokenId].symbol;
-    }
-
     //get tokens totalnumber. 
     function getTokenCount() public view returns (uint256) {
-        return tokensIdscreated.length;
+        return tokensIdsCreated.length;
     }
     //returns the array of all tokenids. 
-    function getTokenIds() public  view returns ( uint256[] memory) {
-        return tokensIdscreated;
+    function getTokenIds() public  view returns (uint256[] memory) {
+        return tokensIdsCreated;
     }
     
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, Notification } from "rsuite";
+import { Notification } from "rsuite";
 
 const NotificationUI = ({ type, message }) => {
   return (

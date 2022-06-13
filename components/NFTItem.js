@@ -17,7 +17,12 @@ const NFTItem = ({ nft }) => {
       <img src={nft.image} className="rounded" />
       <div className="p-3">
         <div className="flex justify-between">
-          <p className="text-xs font-semibold">{nft.name}</p>
+          <div>
+            <p className="text-xs font-base pr-1 text-gray-500">
+              {nft.isMultiToken ? "UITToken1155" : "UITToken721"}
+            </p>
+            <p className="text-xs font-semibold mt-0">{nft.name}</p>
+          </div>
           {nft.bidded && nft.sold ? (
             <></>
           ) : (

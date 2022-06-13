@@ -1,13 +1,16 @@
 import { ethers } from "ethers";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Web3Modal from "web3modal";
+// import Web3Modal from "web3modal";
 import NFTItem from "../components/NFTItem";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
+const erc721Address = process.env.NEXT_PUBLIC_ERC721_CONTRACT_ADDRESS;
 
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 import LoadingPage from "../components/Loading";
+// import { axiosFetcher } from "../utils/fetcher";
 
 export default function Home() {
   const [nfts, setNfts] = useState([]);
@@ -31,8 +34,8 @@ export default function Home() {
     const items = await Promise.all(
       data.map(async (i) => {
         const tokenUri = i.isMultiToken
-          ? await contract.get1155TokenURI(i.tokenId.toString())
-          : await contract.get721TokenURI(i.tokenId.toString());
+          ? await contract.get1155TokenURI(i.tokenId.toString(), erc1155Address)
+          : await contract.get721TokenURI(i.tokenId.toString(), erc721Address);
         const meta = await axios.get(tokenUri);
         let price = ethers.utils.formatUnits(i.price.toString(), "ether");
         let item = {

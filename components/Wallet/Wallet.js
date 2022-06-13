@@ -3,11 +3,10 @@ import Image from "next/image";
 import { getImage, getName } from "../../utils/web3";
 import { getAddChainParameters } from "../../chains";
 import { useToaster } from "rsuite";
-import { NotificationUI } from "../Notification";
+import NotificationUI from "../Notification";
 import Router from "next/router";
 import { useDrawerDispatch, closeDrawer, useDrawerState } from "../useDrawer";
 import { WalletConnect } from "@web3-react/walletconnect";
-import LoadingPage from "../Loading";
 
 export function Wallet({ connector, isActivating, isActive, error, chainId }) {
   return (
@@ -22,7 +21,8 @@ export function Wallet({ connector, isActivating, isActive, error, chainId }) {
         <p className="font-bold">{getName(connector)}</p>
       </div>
       {error ? (
-        <p className="text-red-500 font-xs">{error}</p>
+        // <p className="text-red-500 font-xs">{error.message}</p>
+        <></>
       ) : isActivating ? (
         <p className="text-white text-blue-500 rounded-xl font-semibold">
           Connecting
@@ -71,7 +71,16 @@ export function WalletContainer({
           setError(undefined);
           referToPage();
         })
-        .catch(setError);
+        .catch((e) => {
+          setError(e);
+          const notificationKey = toaster.push(
+            <NotificationUI message={e.message} type="error" />,
+            {
+              placement: "bottomEnd",
+            }
+          );
+          setTimeout(() => toaster.remove(notificationKey), 2500);
+        });
     } else {
       connector
         .activate(
@@ -83,14 +92,20 @@ export function WalletContainer({
           setError(undefined);
           referToPage();
         })
-        .catch(setError);
+        .catch((e) => {
+          setError(e);
+          const notificationKey = toaster.push(
+            <NotificationUI message={e.message} type="error" />,
+            {
+              placement: "bottomEnd",
+            }
+          );
+          setTimeout(() => toaster.remove(notificationKey), 2500);
+        });
     }
   }, [connector, desiredChainId, setError]);
 
   if (error) {
-    toaster.push(<NotificationUI message={error} type="error" />, {
-      placement: "bottomEnd",
-    });
     return (
       <div onClick={onClick}>
         <Wallet
@@ -139,7 +154,16 @@ export function WalletContainer({
                         setError(undefined);
                         referToPage();
                       })
-                      .catch(setError)
+                      .catch((e) => {
+                        setError(e);
+                        const notificationKey = toaster.push(
+                          <NotificationUI message={e.message} type="error" />,
+                          {
+                            placement: "bottomEnd",
+                          }
+                        );
+                        setTimeout(() => toaster.remove(notificationKey), 2500);
+                      })
                   : connector
                       .activate(
                         desiredChainId === -1
@@ -150,7 +174,16 @@ export function WalletContainer({
                         setError(undefined);
                         referToPage();
                       })
-                      .catch(setError)
+                      .catch((e) => {
+                        setError(e);
+                        const notificationKey = toaster.push(
+                          <NotificationUI message={e.message} type="error" />,
+                          {
+                            placement: "bottomEnd",
+                          }
+                        );
+                        setTimeout(() => toaster.remove(notificationKey), 2500);
+                      })
         }
         disabled={isActivating}
       >

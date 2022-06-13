@@ -13,6 +13,8 @@ import LoadingPage from "../components/Loading";
 import { useToaster } from "rsuite";
 import useBalance from "../components/useBalance";
 import styles from "../components/Modal/Modal.module.css";
+import NotificationUI from "../components/Notification";
+import LoadingUI from "../components/LoadingUI";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
@@ -31,12 +33,24 @@ function NFTDetail() {
   const { id, tokenURI, isMultiToken } = router.query;
   const { account: userAccount, provider } = useWeb3React();
   const userBalance = useBalance(provider, userAccount);
-  // const { balance: userBalance } = useAccount();
   const [openBidModal, setOpenBidModal] = useState(false);
   const handleOpenModal = () => setOpenBidModal(true);
   const handleCloseModal = () => setOpenBidModal(false);
   const [formInput, updateFormInput] = useState({ price: "", image: "" });
   const toaster = useToaster();
+  const [hasBidRequesting, setHasBidRequesting] = useState(false);
+  const [hasBuyRequesting, setHasBuyRequesting] = useState("onSale");
+  const [buyError, setBuyError] = useState();
+  const [openBuyModal, setOpenBuyModal] = useState(false);
+  const handleOpenBuyModal = () => setOpenBuyModal(true);
+  const handleCloseBuyModal = () => {
+    setOpenBuyModal(false);
+    setHasBuyRequesting("onSale");
+    setBuyError();
+  };
+
+  const [hasCancelListRequesting, setHasCancelListRequesting] = useState(false);
+  const [hasCancelBidRequesting, setHasCancelBidRequesting] = useState(false);
 
   const [nftData, setNftData] = useState({
     nftContract: "",
@@ -102,10 +116,24 @@ function NFTDetail() {
         NFTMarketplace.abi,
         signer
       );
+      setHasCancelListRequesting(true);
       let transaction = await contract.cancelListingItem(id);
       await transaction.wait();
+      setHasCancelListRequesting(false);
+      const data = await contract.fetchMarketItem(id);
+      setNftData(data);
+      const successCode = toaster.push(
+        <NotificationUI message="Cancel list successfully." type="success" />,
+        { placement: "bottomStart" }
+      );
+      setTimeout(() => toaster.remove(successCode), 2500);
     } catch (error) {
-      console.log("Unknown error: ", error);
+      setHasCancelListRequesting(false);
+      const failureCode = toaster.push(
+        <NotificationUI message={error.message} type="error" />,
+        { placement: "bottomStart" }
+      );
+      setTimeout(() => toaster.remove(failureCode), 2500);
     }
   }
 
@@ -120,12 +148,17 @@ function NFTDetail() {
         NFTMarketplace.abi,
         signer
       );
+      setHasBuyRequesting("buying");
       let transaction = await contract.createMarketSale(id, {
         value: nftData.price,
       });
       await transaction.wait();
+      setHasBuyRequesting("done");
+      const data = await contract.fetchMarketItem(id);
+      setNftData(data);
     } catch (error) {
-      console.log("Unknown error: ", error);
+      setHasBuyRequesting("error");
+      setBuyError(error.message);
     }
   }
 
@@ -144,14 +177,30 @@ function NFTDetail() {
         NFTMarketplace.abi,
         signer
       );
+      setHasBidRequesting(true);
       let transaction = await contract.bid(id, {
         value: placeBidPriceFormatted,
       });
       await transaction.wait();
+      setHasBidRequesting(false);
       const data = await contract.fetchMarketItem(id);
       setNftData(data);
+      handleCloseModal();
+      const successCode = toaster.push(
+        <NotificationUI
+          message="Your offer has been submitted."
+          type="success"
+        />,
+        { placement: "bottomStart" }
+      );
+      setTimeout(() => toaster.remove(successCode), 2500);
     } catch (error) {
-      console.log("Unknown error: ", error);
+      setHasBidRequesting(false);
+      const failureCode = toaster.push(
+        <NotificationUI message={error.message} type="error" />,
+        { placement: "bottomStart" }
+      );
+      setTimeout(() => toaster.remove(failureCode), 2500);
     }
   }
 
@@ -166,10 +215,25 @@ function NFTDetail() {
         NFTMarketplace.abi,
         signer
       );
+      setHasCancelBidRequesting(true);
       let transaction = await contract.withdrawBid(id);
       await transaction.wait();
+      setHasCancelBidRequesting(false);
+      const data = await contract.fetchMarketItem(id);
+      setNftData(data);
+      const successCode = toaster.push(
+        <NotificationUI message="Cancel bid successfully" type="success" />,
+        { placement: "bottomStart" }
+      );
+      setTimeout(() => toaster.remove(successCode), 2500);
     } catch (error) {
+      setHasCancelBidRequesting(false);
       console.log("Unknown error: ", error);
+      const failureCode = toaster.push(
+        <NotificationUI message={error.message} type="error" />,
+        { placement: "bottomStart" }
+      );
+      setTimeout(() => toaster.remove(failureCode), 2500);
     }
   }
 
@@ -260,11 +324,143 @@ function NFTDetail() {
                 ? "bg-blue-300"
                 : "bg-blue-500 hover:bg-blue-800"
             }  focus:ring-2 focus:ring-blue-200 font-semibold rounded-lg text-sm px-8 py-4 mr-2`}
-            disabled={!placeBidPrice || !!validateBidError}
+            disabled={!placeBidPrice || !!validateBidError || hasBidRequesting}
             onClick={bid}
           >
+            {hasBidRequesting ? <LoadingUI /> : <></>}
             Place bid
           </button>
+        </Modal.Footer>
+      </Modal>
+      <Modal
+        open={openBuyModal}
+        onClose={handleCloseBuyModal}
+        className={styles.customModal}
+      >
+        <Modal.Header>
+          <Modal.Title className="flex justify-center">
+            <div className="text-center font-semibold text-xl">
+              {hasBuyRequesting === "onSale"
+                ? "Complete checkout"
+                : hasBuyRequesting === "buying"
+                ? "Your purchase is processing..."
+                : hasBuyRequesting === "done"
+                ? "Your purchase is complete!"
+                : "Something went wrong"}
+            </div>
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {hasBuyRequesting === "onSale" ? (
+            <>
+              {" "}
+              <p className="text-lg font-semibold mb-4 mt-4">Item</p>
+              <div className="flex justify-between items-center py-8 border-t border-b">
+                <div className="flex gap-2 items-center">
+                  {image && <img className="rounded" width="48" src={image} />}
+                  <div>
+                    <p className="text-gray-500 text-xs">
+                      {isMultiToken === "false"
+                        ? "UITToken721"
+                        : "UITToken1155"}
+                    </p>
+                    <p className="font-semibold text-sm mt-[0px]">{name}</p>
+                    <p className="text-gray-500 text-xs mt-[0px]">
+                      Quantity: 1
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-end flex-col">
+                  <p className="text-gray-500 text-xs">Price</p>
+                  <div className="flex gap-1">
+                    <Image
+                      src="https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg"
+                      alt="eth-icon"
+                      height={14}
+                      width={14}
+                    />
+                    <p className="font-semibold">
+                      {convertWeiToEther(nftData.price.toString())}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-between items-center mt-8">
+                <p className="text-lg font-semibold">Total</p>
+                <div className="flex items-end flex-col">
+                  <div className="flex gap-1">
+                    <Image
+                      src="https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg"
+                      alt="eth-icon"
+                      height={14}
+                      width={14}
+                    />
+                    <p className="font-semibold">
+                      {convertWeiToEther(nftData.price.toString())}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : hasBuyRequesting === "buying" ? (
+            <div className="flex flex-col gap-4 items-center">
+              <LoadingUI />
+              <p className="text-base text-gray-600 text-center">
+                Your purchase of {name} is processing. It should be confirmed on
+                the blockchain shortly.
+              </p>
+            </div>
+          ) : hasBuyRequesting === "done" ? (
+            <div className="flex flex-col gap-4 items-center">
+              {image && <img className="rounded" width="120" src={image} />}
+              <p className="text-base text-gray-600 text-center">
+                You are now the proud owner of {name} from the{" "}
+                {isMultiToken ? "UITToken1155" : "UITToken721"} collection.
+              </p>
+            </div>
+          ) : (
+            <div className="flex justify-center text-center text-red-500">
+              {buyError}
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer className="flex justify-center">
+          {hasBuyRequesting === "onSale" ? (
+            <button
+              className={`text-white transition ease-in ${
+                hasBuyRequesting === "buying"
+                  ? "bg-blue-300"
+                  : "bg-blue-500 hover:bg-blue-800"
+              } focus:ring-2 focus:ring-blue-200 font-semibold rounded-lg text-sm px-8 py-4 mr-2`}
+              disabled={hasBuyRequesting === "buying"}
+              onClick={buyNft}
+            >
+              {hasBuyRequesting === "buying" ? <LoadingUI /> : <></>}
+              Checkout
+            </button>
+          ) : hasBuyRequesting === "done" ? (
+            <div className="flex gap-2 w-full">
+              <button
+                className={`transition border-2 hover:shadow ease-in bg-white text-blue-500 focus:ring-2 focus:ring-blue-200 font-semibold rounded-lg text-sm px-8 py-4 mr-2 flex-1`}
+                onClick={() =>
+                  router.push(
+                    `/sell?id=${id}&tokenURI=${tokenURI}&isMultiToken=${isMultiToken}`
+                  )
+                }
+              >
+                List for sale
+              </button>
+              <button
+                className={`text-white transition ease-in bg-blue-500 hover:bg-blue-800 focus:ring-2 focus:ring-blue-200 font-semibold rounded-lg text-sm px-8 py-4 mr-2 flex-1`}
+                disabled={hasBuyRequesting === "buying"}
+                onClick={handleCloseBuyModal}
+              >
+                View item
+              </button>
+            </div>
+          ) : (
+            <></>
+          )}
         </Modal.Footer>
       </Modal>
       {isOwner ? (
@@ -291,7 +487,9 @@ function NFTDetail() {
                   type="button"
                   className="text-blue-600 border hover:shadow-md hover:border-blue-800 border-blue-500 bg-white hover:text-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-10 py-4 transition ease-in"
                   onClick={cancelListing}
+                  disabled={hasCancelListRequesting}
                 >
+                  {hasCancelListRequesting ? <LoadingUI /> : <></>}
                   Cancel listing
                 </button>
               ) : (
@@ -483,7 +681,7 @@ function NFTDetail() {
                               handleOpenModal();
                             }
                           : () => {
-                              buyNft();
+                              handleOpenBuyModal();
                             }
                       }
                       disabled={isOwner}
@@ -537,37 +735,78 @@ function NFTDetail() {
                       </tr>
                     </thead>
                     <tbody className="bg-blue-50/30">
-                      {nftData?.auctionInfo?.bids.map((bidItem) => (
-                        <tr key={bidItem.toString()} className="py-2">
-                          <td className="flex gap-2 font-semibold p-4">
-                            <Image
-                              src="https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg"
-                              alt="eth-icon"
-                              height={10}
-                              width={10}
-                            />
-                            {convertWeiToEther(bidItem?.bid.toString())}
-                          </td>
-                          <td className="p-4">
-                            {getShortAddress(bidItem?.bidder, userAccount)}
-                          </td>
-                          <td>
-                            {!userAccount ? (
-                              <></>
-                            ) : bidItem?.bidder.toLowerCase() ===
-                              userAccount.toLowerCase() ? (
-                              <button
-                                onClick={cancelBid}
-                                className="py-2 px-4 border text-sm border-blue-500 bg-white text-blue-600 rounded-md"
-                              >
-                                Cancel
-                              </button>
-                            ) : (
-                              <></>
-                            )}
-                          </td>
+                      {parseFloat(nftData?.auctionInfo?.highestBid.toString()) >
+                      0 ? (
+                        (nftData?.auctionInfo?.bids.length > 0
+                          ? [
+                              ...nftData?.auctionInfo?.bids,
+                              {
+                                bid: nftData?.auctionInfo?.highestBid,
+                                bidder: nftData?.auctionInfo?.highestBidder,
+                                bidTime: nftData?.auctionInfo?.highestBidTime,
+                              },
+                            ]
+                          : [
+                              {
+                                bid: nftData?.auctionInfo?.highestBid,
+                                bidder: nftData?.auctionInfo?.highestBidder,
+                                bidTime: nftData?.auctionInfo?.highestBidTime,
+                              },
+                            ]
+                        )
+                          .reverse()
+                          ?.filter(
+                            (item) => parseFloat(item?.bid.toString()) > 0
+                          )
+                          .map((bidItem, index) => (
+                            <tr key={bidItem.toString()} className="py-2">
+                              <td className="flex gap-2 font-semibold p-4">
+                                <Image
+                                  src="https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg"
+                                  alt="eth-icon"
+                                  height={10}
+                                  width={10}
+                                />
+                                {convertWeiToEther(bidItem?.bid.toString())}
+                              </td>
+                              <td className="p-4">
+                                {getShortAddress(bidItem?.bidder, userAccount)}
+                              </td>
+                              <td>
+                                {index === 0 ? (
+                                  <p>Highest bid</p>
+                                ) : !userAccount ? (
+                                  <></>
+                                ) : bidItem?.bidder.toLowerCase() ===
+                                  userAccount.toLowerCase() ? (
+                                  <button
+                                    onClick={cancelBid}
+                                    className="py-2 px-4 border text-sm border-blue-500 bg-white text-blue-600 rounded-md"
+                                    disabled={hasCancelBidRequesting}
+                                  >
+                                    {hasCancelBidRequesting ? (
+                                      <LoadingUI />
+                                    ) : (
+                                      <></>
+                                    )}
+                                    Cancel
+                                  </button>
+                                ) : (
+                                  <></>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                      ) : (
+                        <tr className="w-full flex flex-col justify-center items-center p-4">
+                          <img
+                            src="https://testnets.opensea.io/static/images/empty-bids.svg"
+                            alt="no-bid"
+                            width={80}
+                          />
+                          <p className="mt-4">No offer yet</p>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>

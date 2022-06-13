@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract UITToken1155 is ERC1155, Ownable {
     address parentAddress;
-
     uint256[] tokensIdscreated;
 
     //to track supply of each token via id => total
@@ -15,14 +14,29 @@ contract UITToken1155 is ERC1155, Ownable {
 
     mapping (uint256 => string) private _tokenURIString;
 
-    string public name = "UITToken1155";
-    string public symbol = "U1155";
+    string private collectionName;
+    string public collectionSymbol;
     
-    constructor() ERC1155("") {}
+    constructor(string memory _name, string memory _symbol, address _parentAddress) ERC1155("") {
+        collectionName = _name;
+        collectionSymbol = _symbol;
+        parentAddress = _parentAddress;
+    }
     
-    
-    function setParentAddress(address _address) public {
-        parentAddress = _address;
+    function name() public view returns(string memory) {
+        return collectionName;
+    }
+
+    function symbol() public view returns(string memory) {
+        return collectionSymbol;
+    }
+
+    function setName(string memory _name) public onlyOwner {
+        collectionName = _name;
+    }
+
+    function setSymbol(string memory _symbol) public onlyOwner {
+        collectionSymbol = _symbol;
     }
 
     function setURI(string memory newuri) public onlyOwner {
@@ -49,14 +63,10 @@ contract UITToken1155 is ERC1155, Ownable {
     function mintNFT(address _owner, uint256 _id, uint256 amount, string memory _tokenUri ) public {
        // using erc 1155 to creat NFT
        // mint will create NFT and send it to the address. IF address is parent contract then it will throw error unless IERC1155Receiver.onERC1155BatchReceived is implemented. 
-
        _mint(_owner, _id, amount, ""); 
        tokensIdscreated.push(_id);
-
        _totalSupply[_id] = amount;
-
        _tokenURIString[_id] = _tokenUri; 
-
     }
     
     //get tokens totalnumber. 

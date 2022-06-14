@@ -96,8 +96,8 @@ export default function MyAssets() {
     const items = await Promise.all(
       data.map(async (i) => {
         const tokenUri = i.isMultiToken
-          ? await contract.get1155TokenURI(i.tokenId)
-          : await contract.get721TokenURI(i.tokenId);
+          ? await contract.get1155TokenURI(i.tokenId, erc1155Address)
+          : await contract.get721TokenURI(i.tokenId, erc721Address);
         const meta = await axios.get(tokenUri);
         let price = ethers.utils.formatUnits(i.price.toString(), "ether");
         let item = {

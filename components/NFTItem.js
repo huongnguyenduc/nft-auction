@@ -12,9 +12,11 @@ const NFTItem = ({ nft }) => {
           `/detail?id=${nft.tokenId}&tokenURI=${nft.tokenUri}&isMultiToken=${nft.isMultiToken}`
         )
       }
-      className="border cursor-pointer shadow rounded-xl overflow-hidden bg-white transition ease-out hover:shadow-lg hover:-translate-y-0.5"
+      className="flex flex-col border cursor-pointer shadow rounded-xl overflow-hidden bg-white transition ease-out hover:shadow-lg aspect-[3/4]"
     >
-      <img src={nft.image} className="rounded" />
+      <div className="flex h-full items-center">
+        <img src={nft.image} className="rounded object-contain w-full" />
+      </div>
       <div className="p-3">
         <div className="flex justify-between">
           <div>
@@ -39,14 +41,14 @@ const NFTItem = ({ nft }) => {
                     : convertWeiToEther(nft.auctionInfo.startingPrice)}
                 </p>
                 <Image
-                  src="https://openseauserdata.com/files/accae6b6fb3888cbff27a013729c22dc.svg"
+                  src="https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg"
                   alt="eth-icon"
                   height={8}
                   width={8}
                 />
               </div>
               {nft.bidded ? (
-                <></>
+                <div className="text-xs font-thin invisible">No</div>
               ) : (
                 <div className="flex justify-end items-center gap-1">
                   <svg

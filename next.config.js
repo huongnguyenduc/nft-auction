@@ -7,6 +7,7 @@ const nextConfig = {
       "openseauserdata.com",
       "testnets.opensea.io",
       "static.opensea.io",
+      "",
     ],
   },
   webpack(config) {

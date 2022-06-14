@@ -24,11 +24,11 @@ export default function MetaMaskCard({ referrer }) {
   const [error, setError] = useState(undefined);
 
   // attempt to connect eagerly on mount
-  useEffect(() => {
-    void metaMask.connectEagerly().catch(() => {
-      console.debug("Failed to connect eagerly to metamask");
-    });
-  }, []);
+  // useEffect(() => {
+  //   void metaMask.connectEagerly().catch(() => {
+  //     console.debug("Failed to connect eagerly to metamask");
+  //   });
+  // }, []);
 
   return (
     <WalletContainer

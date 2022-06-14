@@ -5,3 +5,10 @@
   padding: 20px;
   padding-top: 90px;
 }
+
+.tooltipCustom {
+  padding: 0;
+  background-color: white;
+  color: black;
+  left: 8px;
+}

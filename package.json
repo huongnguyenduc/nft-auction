@@ -33,8 +33,10 @@
     "postcss": "^8.4.12",
     "react": "18.0.0",
     "react-dom": "18.0.0",
+    "react-number-format": "^4.9.3",
     "rsuite": "^5.14.0",
     "tailwindcss": "^3.0.23",
+    "uuid": "^8.3.2",
     "web3modal": "^1.9.6"
   },
   "devDependencies": {

@@ -24,11 +24,11 @@ export default function CoinbaseWalletCard({ referrer }) {
   const [error, setError] = useState(undefined);
 
   // attempt to connect eagerly on mount
-  useEffect(() => {
-    void coinbaseWallet.connectEagerly().catch(() => {
-      console.debug("Failed to connect eagerly to coinbase wallet");
-    });
-  }, []);
+  // useEffect(() => {
+  //   void coinbaseWallet.connectEagerly().catch(() => {
+  //     console.debug("Failed to connect eagerly to coinbase wallet");
+  //   });
+  // }, []);
 
   return (
     <WalletContainer

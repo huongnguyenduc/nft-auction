@@ -1,75 +1,45 @@
-import { ethers } from "ethers";
-import { useEffect, useState } from "react";
-import axios from "axios";
-// import Web3Modal from "web3modal";
-import NFTItem from "../components/NFTItem";
+import React from "react";
+import Router from "next/router";
 
-const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
-const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
-const erc721Address = process.env.NEXT_PUBLIC_ERC721_CONTRACT_ADDRESS;
-
-import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
-import LoadingPage from "../components/Loading";
-// import { axiosFetcher } from "../utils/fetcher";
-
-export default function Home() {
-  const [nfts, setNfts] = useState([]);
-  const [loadingState, setLoadingState] = useState("not-loaded");
-  useEffect(() => {
-    loadNFTs();
-  }, []);
-  async function loadNFTs() {
-    // const web3Modal = new Web3Modal();
-    // const connection = await web3Modal.connect();
-    // const provider = new ethers.providers.Web3Provider(connection);
-    const network = "rinkeby"; // use rinkeby testnet
-    const provider = ethers.getDefaultProvider(network);
-    const contract = new ethers.Contract(
-      marketplaceAddress,
-      NFTMarketplace.abi,
-      provider
-    );
-    const data = await contract.fetchAvailableMarketItems();
-
-    const items = await Promise.all(
-      data.map(async (i) => {
-        const tokenUri = i.isMultiToken
-          ? await contract.get1155TokenURI(i.tokenId.toString(), erc1155Address)
-          : await contract.get721TokenURI(i.tokenId.toString(), erc721Address);
-        const meta = await axios.get(tokenUri);
-        let price = ethers.utils.formatUnits(i.price.toString(), "ether");
-        let item = {
-          price,
-          tokenId: i.tokenId.toNumber(),
-          seller: i.seller,
-          owner: i.owner,
-          image: meta.data.image,
-          name: meta.data.name,
-          description: meta.data.description,
-          tokenUri: tokenUri,
-          isMultiToken: i.isMultiToken,
-          auctionInfo: i.auctionInfo,
-          sold: i.sold,
-          bidded: i.bidded,
-        };
-        return item;
-      })
-    );
-    setNfts(items);
-    setLoadingState("loaded");
-  }
-  if (loadingState === "not-loaded") return <LoadingPage />;
-  if (loadingState === "loaded" && !nfts.length)
-    return <h1 className="px-20 py-10 text-3xl">No items in marketplace</h1>;
+const index = () => {
   return (
-    <div className="flex justify-center">
-      <div className="px-4 py-12" style={{ maxWidth: "1600px" }}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
-          {nfts.map((nft, i) => (
-            <NFTItem nft={nft} key={nft.toString() + i.toString()} />
-          ))}
+    <div className="flex justify-center w-full">
+      <div className="max-w-[1280px] w-full relative bg-gradient-to-b from-transparent to-white overflow-hidden">
+        <div className="w-full scale-[1.2] translate-y-[62px] h-full absolute bg-cover bg-center opacity-[0.3] blur bg-[url('https://lh3.googleusercontent.com/bXQ7PUJ2k_dzuIQMFrfiKJ0wKjGDeWm2EPDuNXqLiW6z9ZY5HnDagZl3Lhufv8rop_G9B9O7Pb7nqrj0gdyPXTH-=s250')] z-[-1]" />
+        <div className="flex gap-12 w-full p-10 pl-6 items-center">
+          <div className="flex flex-col gap-6 flex-1 w-full">
+            <p className="font-semibold text-[45px] leading-[110%]">
+              Discover, collect, and sell extraordinary NFTs
+            </p>
+            <p className="text-2xl max-w-[400px] leading-9">
+              OpenSky is the world&apos;s first and largest NFT marketplace
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => Router.push("/assets")}
+                className={`text-white transition ease-in bg-blue-500 hover:bg-blue-700 focus:ring-2 focus:ring-blue-200 font-semibold rounded-xl text-base px-14 py-4`}
+              >
+                Explore
+              </button>
+              <button
+                onClick={() => Router.push("/create")}
+                className={`transition border-2 hover:shadow-lg ease-in bg-white text-blue-500 focus:ring-2 focus:ring-blue-200 font-semibold rounded-xl text-base px-14 py-4`}
+              >
+                Create
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 w-full max-w-[550px] max-h-[419px] shadow-xl hover:shadow-2xl overflow-hidden flex items-end transition ease-in bg-white rounded-lg">
+            <img
+              src="https://lh3.googleusercontent.com/bXQ7PUJ2k_dzuIQMFrfiKJ0wKjGDeWm2EPDuNXqLiW6z9ZY5HnDagZl3Lhufv8rop_G9B9O7Pb7nqrj0gdyPXTH-=s550"
+              alt="home-image"
+              className="mb-[-64px]"
+            />
+          </div>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default index;

@@ -9,6 +9,7 @@ import LoadingUI from "../components/LoadingUI";
 import { Modal } from "rsuite";
 import styles from "../components/Modal/Modal.module.css";
 import Checked from "../components/Icon/Checked";
+import { v4 as uuidv4 } from "uuid";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
@@ -87,7 +88,7 @@ export default function CreateItem() {
     const web3Modal = new Web3Modal();
     const connection = await web3Modal.connect();
     const provider = new ethers.providers.Web3Provider(connection);
-    const signer = provider.getSigner();
+    const signer = await provider.getSigner();
 
     try {
       let contract = new ethers.Contract(
@@ -97,17 +98,21 @@ export default function CreateItem() {
       );
       let listingPrice = await contract.getListingPrice();
       listingPrice = listingPrice.toString();
-      provider.once("block", () => {
-        contract.on("MarketItemCreated", (result) =>
-          redirectPage(result, tokenUri, collection)
-        );
-      });
+      // provider.once("block", () => {
+      //   contract.on("MarketItemCreated", (result) =>
+      //     redirectPage(result, tokenUri, collection)
+      //   );
+      // });
       let transaction = await contract.createMarketItem(
         collection === "erc1155" ? erc1155Address : erc721Address,
         tokenUri,
         collection === "erc1155" ? true : false
       );
-      await transaction.wait();
+      const rc = await transaction.wait();
+      const event = rc.events.find(
+        (event) => event.event === "MarketItemCreated"
+      );
+      redirectPage(event.args[0], tokenUri, collection);
       setIsMinting(false);
       handleCloseModal();
       setCreateTokenError("");
@@ -235,7 +240,7 @@ export default function CreateItem() {
             <input
               id="name"
               placeholder="Item Name"
-              className="border rounded p-4 w-full"
+              className="border rounded p-4 w-full focus:shadow-lg focus-visible:outline-none"
               onChange={(e) => {
                 updateFormInput({ ...formInput, name: e.target.value });
                 if (!e.target.value) {
@@ -257,7 +262,7 @@ export default function CreateItem() {
             <textarea
               id="description"
               placeholder="Provide a detailed description of your item."
-              className="mt-2 border rounded p-4 w-full"
+              className="mt-2 border rounded p-4 w-full focus:shadow-lg focus-visible:outline-none"
               onChange={(e) =>
                 updateFormInput({ ...formInput, description: e.target.value })
               }
@@ -275,7 +280,7 @@ export default function CreateItem() {
               onChange={(e) =>
                 updateFormInput({ ...formInput, collection: e.target.value })
               }
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+              className="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 focus:shadow-lg focus-visible:outline-none"
             >
               <option defaultValue value="erc721">
                 UIT Token 721

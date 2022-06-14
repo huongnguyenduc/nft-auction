@@ -32,11 +32,11 @@ export default function WalletConnectCard({ referrer }) {
   }, []);
 
   // attempt to connect eagerly on mount
-  useEffect(() => {
-    walletConnect.connectEagerly().catch(() => {
-      console.debug("Failed to connect eagerly to walletconnect");
-    });
-  }, []);
+  // useEffect(() => {
+  //   walletConnect.connectEagerly().catch(() => {
+  //     console.debug("Failed to connect eagerly to walletconnect");
+  //   });
+  // }, []);
 
   return (
     <WalletContainer

@@ -13,7 +13,7 @@ function MyApp({ Component, pageProps }) {
     <Web3ReactProvider connectors={connectors}>
       <DrawerProvider>
         <Head>
-          <title>NFT Marketplace</title>
+          <title>OpenSky</title>
           <meta
             name="viewport"
             content="minimum-scale=1, initial-scale=1, width=device-width"

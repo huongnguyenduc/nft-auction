@@ -52,13 +52,15 @@ export function WalletContainer({
   const toaster = useToaster();
   const drawerDispatch = useDrawerDispatch();
   async function referToPage() {
-    try {
-      if (isDrawerOpen) {
-        closeDrawer(drawerDispatch);
+    if (referrer) {
+      try {
+        if (isDrawerOpen) {
+          closeDrawer(drawerDispatch);
+        }
+        Router.push(`${referrer}`);
+      } catch (e) {
+        console.log("Error when login: ", e);
       }
-      Router.push(`${referrer}`);
-    } catch (e) {
-      console.log("Error when login: ", e);
     }
   }
 

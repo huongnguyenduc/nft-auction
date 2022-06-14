@@ -1,0 +1,10 @@
+.customSelectPicker div {
+  font-weight: 600;
+  padding: 12px 36px 12px 24px !important;
+  border-width: 2px !important;
+}
+/* .customSelectPicker {
+} */
+.rs-picker-select-menu-item {
+  font-weight: 600;
+}

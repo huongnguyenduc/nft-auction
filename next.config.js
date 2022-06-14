@@ -10,6 +10,7 @@ const nextConfig = {
       "",
     ],
   },
+  presets: ["next/babel"],
   webpack(config) {
     config.module.rules.push({
       test: /\^(?!tailwind.css).(le|c)ss$/,

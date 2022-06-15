@@ -14,16 +14,17 @@ export default function Home() {
     (index) => [`nft/listing?pageNumber=${index + 1}&pageSize=${PAGE_SIZE}`],
     axiosFetcher
   );
+  console.log(data, "data");
   const nfts = data
-    ? [].concat(...data?.map((response) => response?.data?.nfts))
+    ? [].concat(...data?.map((response) => response?.data))
     : [];
   const isLoadingInitialData = !data && !error;
   const isLoadingMore =
     isLoadingInitialData ||
     (size > 0 && data && typeof data[size - 1] === "undefined");
-  const isEmpty = data?.[0].data?.nfts?.length === 0;
+  const isEmpty = data?.[0].data?.length === 0;
   const hasNoMore =
-    isEmpty || (data && data?.[0]?.data?.meta?.total === nfts?.length);
+    isEmpty || (data && data?.[0]?.pagination?.total === nfts?.length);
   const [isOpenFilter, setIsOpenFilter] = useState(true);
   const toggleFilter = () => setIsOpenFilter((state) => !state);
   const [isMoreGrid, setIsMoreGrid] = useState(false);

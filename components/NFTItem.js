@@ -36,7 +36,7 @@ const NFTItem = ({ nft }) => {
               <div className="flex justify-end">
                 <p className="text-xs font-semibold pr-1">
                   {nft?.bidded
-                    ? nft?.price
+                    ? convertWeiToEther(nft?.price)
                     : nft?.auctionInfo.highestBid.toString() !== "0"
                     ? convertWeiToEther(nft?.auctionInfo.highestBid)
                     : convertWeiToEther(nft?.auctionInfo.startingPrice)}

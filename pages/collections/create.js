@@ -7,10 +7,7 @@ import Router from "next/router";
 import { useWeb3React } from "@web3-react/core";
 import { uploadFileToIPFS } from "../../utils/upload";
 import ApiClient from "../../utils/ApiClient";
-import { signIn } from "next-auth/react";
 import { ethers } from "ethers";
-import { v4 as uuidv4 } from "uuid";
-import VerifySignatureContract from "../../contracts/VerifySignature.json";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const verifySignatureContractAddress =
@@ -18,52 +15,6 @@ const verifySignatureContractAddress =
 
 const CreateCollection = () => {
   const { isActive, account } = useWeb3React();
-  async function login() {
-    try {
-      console.log(1);
-      const web3Modal = new Web3Modal();
-      console.log(2);
-      const connection = await web3Modal.connect();
-      console.log(3);
-      const provider = new ethers.providers.Web3Provider(connection);
-      console.log(4);
-      const signer = provider.getSigner();
-      console.log(5);
-      const message = uuidv4();
-      console.log(6);
-      const contract = new ethers.Contract(
-        verifySignatureContractAddress,
-        VerifySignatureContract.abi,
-        signer
-      );
-      console.log(7);
-      console.log(contract);
-      const hashMessage = await contract.getMessageHash(message);
-      console.log(8);
-      const signature = await signer.signMessage(
-        ethers.utils.arrayify(hashMessage)
-      );
-      const res = await signIn("credentials", {
-        redirect: false,
-        wallet: account,
-        message,
-        signature,
-      });
-      console.log(10);
-      if (res !== undefined) {
-        const { error, url } = res;
-        console.log("res", res);
-        if (error) {
-          console.log("error", error);
-        }
-        if (url) {
-          console.log("url", url);
-        }
-      }
-    } catch (e) {
-      console.log("error login", e.message);
-    }
-  }
 
   React.useEffect(() => {
     if (!isActive) {
@@ -352,12 +303,6 @@ const CreateCollection = () => {
             className="font-bold mt-6 bg-blue-500 text-white rounded-xl py-4 px-6"
           >
             Create
-          </button>
-          <button
-            onClick={login}
-            className="font-bold mt-6 bg-blue-500 text-white rounded-xl py-4 px-6"
-          >
-            Login
           </button>
         </div>
       </div>

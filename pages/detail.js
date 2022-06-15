@@ -16,6 +16,7 @@ import NotificationUI from "../components/Notification";
 import LoadingUI from "../components/LoadingUI";
 import { axiosFetcher } from "../utils/fetcher";
 import { useDrawerDispatch, openDrawer } from "../components/useDrawer";
+import ApiClient from "../utils/ApiClient";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
@@ -119,6 +120,13 @@ function NFTDetail() {
         setHasCancelListRequesting(true);
         let transaction = await contract.cancelListingItem(id);
         await transaction.wait();
+        const cancelListRequest = await ApiClient(userAccount).patch(
+          `/nft/cancel-list`,
+          {
+            tokenId: id,
+          }
+        );
+        console.log("cancel List token", cancelListRequest);
         setHasCancelListRequesting(false);
         const successCode = toaster.push(
           <NotificationUI message="Cancel list successfully." type="success" />,
@@ -155,6 +163,10 @@ function NFTDetail() {
           value: nftData.price,
         });
         await transaction.wait();
+        const buyTokenRequest = await ApiClient(userAccount).patch(`/nft/buy`, {
+          tokenId: id,
+        });
+        console.log("buy token", buyTokenRequest);
         setHasBuyRequesting("done");
         await fetchNFT();
       } catch (error) {
@@ -186,6 +198,15 @@ function NFTDetail() {
           value: placeBidPriceFormatted,
         });
         await transaction.wait();
+        const bidTokenRequest = await ApiClient(userAccount).patch(
+          `/nft/place-bid`,
+          {
+            tokenId: id,
+            bid: placeBidPriceFormatted.toString(),
+            bidTime: new Date(),
+          }
+        );
+        console.log("bid token", bidTokenRequest);
         setHasBidRequesting(false);
         await fetchNFT();
         handleCloseModal();
@@ -224,6 +245,13 @@ function NFTDetail() {
         setHasCancelBidRequesting(true);
         let transaction = await contract.withdrawBid(id);
         await transaction.wait();
+        const cancelBidRequest = await ApiClient(userAccount).patch(
+          `/nft/withdraw-bid`,
+          {
+            tokenId: id,
+          }
+        );
+        console.log("cancel bid token", cancelBidRequest);
         setHasCancelBidRequesting(false);
         await fetchNFT();
         const successCode = toaster.push(
@@ -253,7 +281,7 @@ function NFTDetail() {
     [userAccount, nftData]
   );
 
-  if (!nftData.nftContract) return <LoadingPage />;
+  if (!nftData.collectionAddress) return <LoadingPage />;
 
   return (
     <>

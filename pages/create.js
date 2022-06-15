@@ -10,18 +10,13 @@ import Checked from "../components/Icon/Checked";
 import NFTMarketplace from "../contracts/NFTMarketplace.json";
 import Image from "next/image";
 import { uploadFileToIPFS } from "../utils/upload";
+import ApiClient from "../utils/ApiClient";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
-const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
-const erc721Address = process.env.NEXT_PUBLIC_ERC721_CONTRACT_ADDRESS;
-
-function redirectPage(result) {
-  const tokenId = result.toString();
-  Router.push(`/detail?id=${tokenId}`);
-}
 
 export default function CreateItem() {
-  const { isActive, account } = useWeb3React();
+  const { isActive, account, isActivating } = useWeb3React();
+  const [userCollection, setUserCollection] = useState([]);
   const nftFileInput = useRef();
   useEffect(() => {
     if (!isActive) {
@@ -30,6 +25,27 @@ export default function CreateItem() {
       // login();
     }
   }, [isActive]);
+
+  useEffect(() => {
+    async function getUserCollection() {
+      const userCollectionResponse = await ApiClient(account).get(
+        `/user/collections`
+      );
+      console.log("collection list", userCollectionResponse);
+      setUserCollection(userCollectionResponse?.data?.data);
+      if (
+        userCollectionResponse?.data?.data &&
+        userCollectionResponse?.data?.data.length > 0
+      )
+        updateFormInput({
+          ...formInput,
+          collection: userCollectionResponse?.data?.data[0],
+        });
+    }
+    if (!!isActive && !!account && !isActivating) {
+      getUserCollection();
+    }
+  }, [account]);
 
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const handleOpenModal = () => setOpenCreateModal(true);
@@ -42,7 +58,7 @@ export default function CreateItem() {
   const [formInput, updateFormInput] = useState({
     name: "",
     description: "",
-    collection: "erc721",
+    collection: {},
   });
   const [isMinting, setIsMinting] = useState(false);
 
@@ -76,11 +92,11 @@ export default function CreateItem() {
     setIsMinting(true);
     handleOpenModal();
     const tokenUri = await uploadToIPFS();
-    const { collection } = formInput;
+    const { collection, name, description } = formInput;
     const web3Modal = new Web3Modal();
     const connection = await web3Modal.connect();
     const provider = new ethers.providers.Web3Provider(connection);
-    const signer = await provider.getSigner();
+    const signer = provider.getSigner();
 
     try {
       let contract = new ethers.Contract(
@@ -90,16 +106,27 @@ export default function CreateItem() {
       );
       let listingPrice = await contract.getListingPrice();
       listingPrice = listingPrice.toString();
+      console.log("collection ne", collection);
       let transaction = await contract.createMarketItem(
-        collection === "erc1155" ? erc1155Address : erc721Address,
+        collection.address,
         tokenUri,
-        collection === "erc1155" ? true : false
+        collection.isMultiToken
       );
       const rc = await transaction.wait();
       const event = rc.events.find(
         (event) => event.event === "MarketItemCreated"
       );
-      redirectPage(event.args[0]);
+      const tokenId = event.args[0].toString();
+      const mintTokenRequest = await ApiClient(account).post(`/nft`, {
+        tokenId,
+        nftContract: collection.address,
+        name,
+        description,
+        image: fileUrl,
+        isMultiToken: collection.isMultiToken,
+      });
+      console.log(mintTokenRequest, "request");
+      Router.push(`/detail?id=${mintTokenRequest?.data?.data?.tokenId}`);
       setIsMinting(false);
       handleCloseModal();
       setCreateTokenError("");
@@ -313,10 +340,15 @@ export default function CreateItem() {
               }
               className="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 focus:shadow-lg focus:border-gray-400 focus:ring-0"
             >
-              <option defaultValue value="erc721">
-                UIT Token 721
-              </option>
-              <option value="erc1155">UIT Token 1155</option>
+              {userCollection && userCollection.length > 0 ? (
+                userCollection.map((collection) => (
+                  <option key={collection.address} value={collection}>
+                    {collection.name}
+                  </option>
+                ))
+              ) : (
+                <></>
+              )}
             </select>
           </div>
           <div className="flex gap-4 items-center">

@@ -3,16 +3,24 @@ import Image from "next/image";
 import { getShortAddress } from "../utils/utils";
 import { useWeb3React } from "@web3-react/core";
 import Router from "next/router";
-import { axiosFetcher } from "../utils/fetcher";
 import NFTItem from "../components/NFTItem";
+import { getSession } from "next-auth/react";
+import ApiClient from "../utils/ApiClient";
 
 export default function MyAssets() {
+  const [userData, setUserData] = useState();
   const { isActive, account: userAccount } = useWeb3React();
   useEffect(() => {
+    async function getUser() {
+      const session = await getSession();
+      console.log("session", session);
+      setUserData(session.user);
+    }
     if (!isActive) {
       Router.push(`/login?referrer=account`);
     } else {
       loadNFTs();
+      getUser();
     }
   }, [isActive]);
   const [nfts, setNfts] = useState([]);
@@ -22,29 +30,29 @@ export default function MyAssets() {
     setTabState("collected");
   }, [userAccount]);
   async function loadNFTs() {
-    const myNFTsResponse = await axiosFetcher(`nft/user/${userAccount}`);
-    setNfts(myNFTsResponse?.data?.nfts ? myNFTsResponse?.data?.nfts : []);
+    const myNFTsResponse = await ApiClient(userAccount).get(`/user/nfts`);
+    setNfts(myNFTsResponse?.data?.data ? myNFTsResponse?.data?.data : []);
   }
 
   const [listedNfts, setListedNfts] = useState([]);
 
   async function loadListedNFTs() {
-    const listingNFTsResponse = await axiosFetcher(
-      `nft/user/${userAccount}/listing`
+    const listingNFTsResponse = await ApiClient(userAccount).get(
+      `/user/listing-nfts`
     );
     setListedNfts(
-      listingNFTsResponse?.data?.nfts ? listingNFTsResponse?.data?.nfts : []
+      listingNFTsResponse?.data?.data ? listingNFTsResponse?.data?.data : []
     );
   }
 
   const [biddingNfts, setBiddingNfts] = useState([]);
 
   async function loadBiddingNFTs() {
-    const bidNFTsResponse = await axiosFetcher(
-      `nft/user/${userAccount}/bidding-auction`
+    const bidNFTsResponse = await ApiClient(userAccount).get(
+      `/user/bidding-nfts`
     );
     setBiddingNfts(
-      bidNFTsResponse?.data?.nfts ? bidNFTsResponse?.data?.nfts : []
+      bidNFTsResponse?.data?.data ? bidNFTsResponse?.data?.data : []
     );
   }
 
@@ -53,12 +61,30 @@ export default function MyAssets() {
       <div
         className={`w-full h-[43vh] ${"bg-gray-100 hover:bg-gray-300 relative"}`}
       >
+        {userData?.banner ? (
+          <Image
+            src={userData.banner}
+            alt="user-banner"
+            layout="fill"
+            objectFit="cover"
+          />
+        ) : (
+          <></>
+        )}
         <div className="w-[180px] h-[180px] rounded-[180px] absolute bottom-[-30px] left-8 xl:left-16 bg-white shadow flex justify-center items-center">
-          <div className="w-[168px] h-[168px] rounded-[168px] bg-gray-400"></div>
+          <div className="w-[168px] h-[168px] rounded-[168px] bg-gray-400 relative overflow-hidden">
+            {userData?.image ? (
+              <Image src={userData.image} alt="user-image" layout="fill" />
+            ) : (
+              <></>
+            )}
+          </div>
         </div>
       </div>
       <div className="px-8 xl:px-16 pt-12 flex flex-col w-full">
-        <p className="text-3xl font-semibold mb-2">Unnamed</p>
+        <p className="text-3xl font-semibold mb-2">
+          {userData?.username ? userData?.username : "Unnamed"}
+        </p>
         <div className="flex gap-2 mb-4">
           <Image
             src="https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg"
@@ -112,9 +138,9 @@ export default function MyAssets() {
             </p>
           </div>
         </div>
-        <div className="flex justify-center">
-          <div className="flex">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 pt-4">
+        <div className="flex justify-center w-full">
+          <div className="flex w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 pt-4 w-full">
               {tabState === "collected" ? (
                 nfts.map((nft, i) => (
                   <NFTItem nft={nft} key={nft.toString() + i.toString()} />

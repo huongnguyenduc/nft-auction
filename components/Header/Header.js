@@ -24,6 +24,7 @@ import Image from "next/image";
 import NumberFormat from "react-number-format";
 import { Tooltip, Whisper } from "rsuite";
 import { getName, getImage } from "../../utils/web3";
+import { getSession } from "next-auth/react";
 
 function Header() {
   const router = useRouter();
@@ -55,6 +56,15 @@ function Header() {
       console.log(`uri: ${uri}`);
     });
   }, []);
+  const [userData, setUserData] = useState();
+  useEffect(() => {
+    async function getUser() {
+      const session = await getSession();
+      console.log("session", session);
+      setUserData(session.user);
+    }
+    getUser();
+  }, [account]);
 
   const [hoverProfileRef, isHoveredProfile] = useHover();
   const [hoverProfileMenuRef, isHoveredProfileMenu] = useHover();
@@ -510,12 +520,16 @@ function Header() {
             {isActive ? (
               <div className="w-[32px] h-[32px] rounded-[50%] border-2 flex justify-center items-center">
                 <div className="w-[26px] h-[26px] rounded-[50%] relative overflow-hidden">
-                  <Image
-                    layout="fill"
-                    objectFit="cover"
-                    src="https://lh3.googleusercontent.com/_70_WkLyBXX9bpKfA1vzWAJM0samNsL13jwIKSl0Lh-jC2LdipKLKJi8fCZfGgDb8ljAyCm2dzYsj1ifg180hGxa-n0F9zHwFj8-EyI=s60"
-                    alt="avatar-drawer"
-                  />
+                  {userData?.image ? (
+                    <Image
+                      layout="fill"
+                      objectFit="cover"
+                      src={userData?.image}
+                      alt="avatar-nav"
+                    />
+                  ) : (
+                    <></>
+                  )}
                 </div>
               </div>
             ) : (

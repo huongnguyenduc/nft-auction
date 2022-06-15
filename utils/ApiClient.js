@@ -1,6 +1,6 @@
 import axios from "axios";
 import { getSession } from "next-auth/react";
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import { ethers } from "ethers";
 import { v4 as uuidv4 } from "uuid";
 import Web3Modal from "web3modal";
@@ -14,7 +14,7 @@ async function login(account) {
     const web3Modal = new Web3Modal();
     const connection = await web3Modal.connect();
     const provider = new ethers.providers.Web3Provider(connection);
-    const signer = await provider.getSigner();
+    const signer = provider.getSigner();
     const message = uuidv4();
     let contract = new ethers.Contract(
       verifySignatureContractAddress,
@@ -60,17 +60,23 @@ const ApiClient = (account) => {
   const instance = axios.create(defaultOptions);
 
   instance.interceptors.request.use(async (request) => {
-    const session = await getSession();
+    const session = await getSession(request);
+    console.log("session request", session);
     if (
       session &&
       session?.user?.wallet === account &&
       !(session?.error === "RefreshAccessTokenError")
     ) {
-      request.headers.Authorization = session.accessToken;
+      console.log("login okie", session);
+      request.headers.x_authorization = session?.accessToken;
     } else {
+      // if (session) {
+      //   await signOut();
+      // }
       await login(account);
-      const newSession = await getSession();
-      request.headers.Authorization = `${newSession.accessToken}`;
+      const newSession = await getSession(request);
+      console.log("newSession", newSession);
+      request.headers.x_authorization = `${newSession?.accessToken}`;
     }
     return request;
   });

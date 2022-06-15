@@ -13,17 +13,17 @@ import { Modal } from "rsuite";
 import styles from "../components/Modal/Modal.module.css";
 import { useWeb3React } from "@web3-react/core";
 import { axiosFetcher } from "../utils/fetcher";
+import ApiClient from "../utils/ApiClient";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
-const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
-const erc721Address = process.env.NEXT_PUBLIC_ERC721_CONTRACT_ADDRESS;
+
 import { addDays } from "date-fns";
 import Checked from "../components/Icon/Checked";
 
-export default function ResellNFT() {
+export default function ListNFT() {
   const router = useRouter();
   const { id } = router.query;
-  const { isActive } = useWeb3React();
+  const { isActive, account } = useWeb3React();
   useEffect(() => {
     if (!isActive && id) {
       Router.push(`/login?referrer=sell&id=${id}`);
@@ -47,7 +47,7 @@ export default function ResellNFT() {
   async function fetchNFT() {
     const detailResponse = await axiosFetcher(`nft/id/${id}`);
     updateFormInput({
-      ...detailResponse,
+      ...detailResponse.data,
       price: 0,
     });
   }
@@ -62,8 +62,8 @@ export default function ResellNFT() {
       const provider = new ethers.providers.Web3Provider(connection);
       const signer = provider.getSigner();
       let nftContract = new ethers.Contract(
-        isMultiToken === "true" ? erc1155Address : erc721Address,
-        isMultiToken === "true" ? ERC1155.abi : ERC721.abi,
+        formInput.collectionAddress,
+        formInput.isMultiToken === true ? ERC1155.abi : ERC721.abi,
         signer
       );
       setListItemStatus("Approving");
@@ -90,11 +90,29 @@ export default function ResellNFT() {
           }
         );
         await transaction.wait();
+        const createAuctionRequest = await ApiClient(account).patch(
+          `/nft/create-auction`,
+          {
+            tokenId: id,
+            startTime: startTime.getTime(),
+            endTime: endTime.getTime(),
+            startingPrice: priceFormatted.toString(),
+          }
+        );
+        console.log("created auction", createAuctionRequest);
       } else {
         let transaction = await contract.listMarketItem(id, priceFormatted, {
           value: listingPrice,
         });
         await transaction.wait();
+        const createMarketItemRequest = await ApiClient(account).patch(
+          `/nft/list-nft`,
+          {
+            tokenId: id,
+            price: priceFormatted.toString(),
+          }
+        );
+        console.log("created market item", createMarketItemRequest);
       }
       setListItemStatus("Listed");
     } catch (error) {

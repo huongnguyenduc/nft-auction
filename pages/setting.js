@@ -1,8 +1,58 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import Head from "next/head";
 import Image from "next/image";
+import { useWeb3React } from "@web3-react/core";
 
 const Setting = () => {
+  const { account } = useWeb3React();
+  const avatarFileInput = useRef();
+  const bannerFileInput = useRef();
+  const [userForm, setUserForm] = useState({
+    username: "",
+    bio: "",
+    email: "",
+    image: "",
+    imageURL: "",
+    banner: "",
+    bannerURL: "",
+  });
+  const [userFormError, setUserFormError] = React.useState({
+    emailError: "",
+  });
+  function selectedAvatarFile(event) {
+    if (event.target.files[0]) {
+      setUserForm((prevData) => ({
+        ...prevData,
+        image: event.target.files[0],
+        imageURL: URL.createObjectURL(event.target.files[0]),
+      }));
+    }
+  }
+  function selectedBannerFile(event) {
+    if (event.target.files[0]) {
+      setUserForm((prevData) => ({
+        ...prevData,
+        banner: event.target.files[0],
+        bannerURL: URL.createObjectURL(event.target.files[0]),
+      }));
+    }
+  }
+  async function updateUser() {
+    try {
+      const image = await uploadFileToIPFS(userForm.image);
+      const banner = await uploadFileToIPFS(userForm.banner);
+      const updateUserResponse = await ApiClient(account).post("/collection", {
+        name: userForm.name,
+        image,
+        banner,
+        bio: userForm.description,
+        email: userForm.email,
+      });
+      console.log("create collection", updateUserResponse);
+    } catch (error) {
+      console.log("Unknown error: ", error);
+    }
+  }
   return (
     <>
       <Head>

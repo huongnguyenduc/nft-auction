@@ -14,7 +14,7 @@ async function refreshAccessToken(token) {
         refreshToken: token.refreshToken,
       },
       headers: {
-        Authorization: token.accessToken,
+        x_authorization: token.accessToken,
       },
     });
 
@@ -101,13 +101,16 @@ export default NextAuth({
   },
   callbacks: {
     async jwt({ token, user, account }) {
+      console.log("token", token);
+      console.log("user", user);
+      console.log("account", account);
       if (account && user) {
         return {
           ...token,
           accessToken: user.token,
           refreshToken: user.user.refreshToken,
           accessTokenExpires: Date.now() + user.expiresAt,
-          user,
+          user: user.user,
         };
       }
 
@@ -119,10 +122,13 @@ export default NextAuth({
     },
 
     async session({ session, token, user }) {
+      console.log("tokenn", token);
+      console.log("userr", user);
+      console.log("sessionn", session);
       session.accessToken = token.accessToken;
       session.refreshToken = token.refreshToken;
       session.accessTokenExpires = token.accessTokenExpires;
-      session.user = user.user;
+      session.user = token.user;
       return session;
     },
   },

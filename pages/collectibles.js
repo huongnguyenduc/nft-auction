@@ -1,8 +1,46 @@
-import React from "react";
-import Router from "next/router";
+import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
+import { axiosFetcher } from "../utils/fetcher";
+import LoadingPage from "../components/Loading";
+import useSWRInfinite from "swr/infinite";
+import CollectionItem from "../components/CollectionItem";
+
+const PAGE_SIZE = 6;
 
 const Collectibles = () => {
+  const { data, error, size, setSize } = useSWRInfinite(
+    (index) => [`collection?pageNumber=${index + 1}&pageSize=${PAGE_SIZE}`],
+    axiosFetcher
+  );
+  console.log(data, "data");
+  const collections = data
+    ? [].concat(...data?.map((response) => response?.data))
+    : [];
+  const isLoadingInitialData = !data && !error;
+  const isLoadingMore =
+    isLoadingInitialData ||
+    (size > 0 && data && typeof data[size - 1] === "undefined");
+  const isEmpty = data?.[0].data?.length === 0;
+  const hasNoMore =
+    isEmpty || (data && data?.[0]?.pagination?.total === collections?.length);
+  useEffect(() => {
+    window.addEventListener("scroll", reachEndCallback, false);
+    return () => {
+      window.removeEventListener("scroll", reachEndCallback, false);
+    };
+  }, [hasNoMore]);
+  function reachEnd() {
+    if (
+      window.innerHeight + window.scrollY >= document.body.offsetHeight &&
+      !hasNoMore
+    ) {
+      setSize((size) => size + 1);
+    }
+  }
+  const reachEndCallback = useCallback(() => {
+    reachEnd();
+  }, [hasNoMore]);
+  if (isLoadingInitialData) return <LoadingPage />;
   return (
     <>
       <div className="w-full h-[220px] relative">
@@ -16,46 +54,19 @@ const Collectibles = () => {
       <div className="text-center w-full mt-6 text-[40px] font-semibold">
         Explore Collectibles
       </div>
-      <div className="flex justify-center">
-        <div className="py-12 max-w-[1600px]">
+      <div className="flex justify-center w-full">
+        <div className="py-12 max-w-[1600px] w-full">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-4 px-8">
-            <div
-              onClick={() => Router.push("/collections/1")}
-              className="w-full border hover:shadow-lg pb-[22px] cursor-pointer"
-            >
-              <div className="h-[199px] w-full relative">
-                <Image
-                  layout="fill"
-                  objectFit="cover"
-                  src="https://lh3.googleusercontent.com/qU32LVN6jUy-ObRFSh8L1ku1tMmcIX5q_WJ3jKuZuSobuBhAOOlP2jizKj9tot52c9P7D-9Aar-TyYDqv_aFeFHOzibbRcC86o32XA=h200"
-                  alt="collection-banner"
-                  className="object-cover w-full h-full"
+            {collections && collections.length > 0 ? (
+              collections.map((collection) => (
+                <CollectionItem
+                  key={collection.address}
+                  collection={collection}
                 />
-              </div>
-              <div className="mt-[-36px] w-full relative p-[10px]">
-                <div className="flex justify-center">
-                  <div className="flex justify-center items-center w-[50px] h-[50px] rounded-[50px] bg-white border">
-                    <div className="h-[44px] w-[44px] rounded-[44px] relative overflow-hidden">
-                      <Image
-                        layout="fill"
-                        objectFit="cover"
-                        src="https://lh3.googleusercontent.com/BX7cWHwWFzo6FVh-Ql_qzFbXtADQgLLlpLOl3l9tS6hUPlgtGHgHn_E1FxiHXmzNlvig00ZEAk9uZU-tMPT2Fg=s100"
-                        alt="collection-avatar"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <p className="mt-8 w-full text-center font-semibold text-base">
-                  Autoglyphs
-                </p>
-                <div className="mt-4 w-full flex justify-center">
-                  <p className="text-center max-w-[80%] text-base">
-                    Autoglyphs are the first “on-chain” generative art on the
-                    Ethereum blockchain. A completely self-con...
-                  </p>
-                </div>
-              </div>
-            </div>
+              ))
+            ) : (
+              <></>
+            )}
           </div>
         </div>
       </div>

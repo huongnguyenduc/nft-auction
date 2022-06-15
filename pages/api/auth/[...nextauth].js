@@ -1,6 +1,45 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
+const baseURL =
+  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:1337";
+
+async function refreshAccessToken(token) {
+  try {
+    const url = baseURL + "/auth/refresh";
+
+    const response = await fetch(url, {
+      method: "POST",
+      body: {
+        refreshToken: token.refreshToken,
+      },
+      headers: {
+        Authorization: token.accessToken,
+      },
+    });
+
+    const refreshedTokens = await response.json();
+
+    if (!response.ok) {
+      throw refreshedTokens;
+    }
+
+    return {
+      ...token,
+      accessToken: refreshedTokens.token,
+      accessTokenExpires: Date.now() + refreshedTokens.expiresAt,
+      refreshToken: refreshedTokens.user.refreshToken ?? token.refreshToken, // Fall back to old refresh token
+      user: refreshedTokens.user,
+    };
+  } catch (error) {
+    console.log("Cant refresh token", error);
+    return {
+      ...token,
+      error: "RefreshAccessTokenError",
+    };
+  }
+}
+
 export default NextAuth({
   providers: [
     CredentialsProvider({
@@ -10,14 +49,22 @@ export default NextAuth({
           label: "wallet",
           type: "text",
         },
+        message: {
+          label: "message",
+          type: "text",
+        },
+        signature: {
+          label: "signature",
+          type: "text",
+        },
       },
       async authorize(credentials, req) {
         const payload = {
           wallet: credentials?.wallet,
+          message: credentials?.message,
+          sig: credentials?.signature,
         };
-
-        console.log("payload", payload);
-
+        console.log(payload);
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/auth/login`,
           {
@@ -28,17 +75,16 @@ export default NextAuth({
             },
           }
         );
-        console.log("hula", res);
+        console.log("Login response", res);
 
         const user = await res.json();
-        console.log("halu", user);
+        console.log("Login data", user);
         if (!res.ok) {
           throw new Error(user);
         }
         // If no error and we have user data, return it
         if (res.ok && user) {
-          console.log(user);
-          return user;
+          return user.data;
         }
 
         // Return null if user data could not be retrieved
@@ -58,18 +104,25 @@ export default NextAuth({
       if (account && user) {
         return {
           ...token,
-          accessToken: user,
-          //   refreshToken: account.refresh_token,
+          accessToken: user.token,
+          refreshToken: user.user.refreshToken,
+          accessTokenExpires: Date.now() + user.expiresAt,
+          user,
         };
       }
 
-      return token;
+      if (Date.now() < token.accessTokenExpires) {
+        return token;
+      }
+
+      refreshAccessToken(token);
     },
 
     async session({ session, token, user }) {
       session.accessToken = token.accessToken;
-      //   session.refreshToken = token.refreshToken;
-      //   session.accessTokenExpires = token.accessTokenExpires;
+      session.refreshToken = token.refreshToken;
+      session.accessTokenExpires = token.accessTokenExpires;
+      session.user = user.user;
       return session;
     },
   },

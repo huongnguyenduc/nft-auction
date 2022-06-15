@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import { ethers } from "ethers";
-import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
+import NFTMarketplace from "../contracts/NFTMarketplace.json";
 import Web3Modal from "web3modal";
 import { useWeb3React } from "@web3-react/core";
 import { Modal } from "rsuite";

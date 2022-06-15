@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { ethers } from "ethers";
-import { create as ipfsHttpClient } from "ipfs-http-client";
 import Web3Modal from "web3modal";
 import Router from "next/router";
 import { useWeb3React } from "@web3-react/core";
@@ -8,15 +7,13 @@ import LoadingUI from "../components/LoadingUI";
 import { Modal } from "rsuite";
 import styles from "../components/Modal/Modal.module.css";
 import Checked from "../components/Icon/Checked";
-import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
-import { signIn } from "next-auth/react";
+import NFTMarketplace from "../contracts/NFTMarketplace.json";
 import Image from "next/image";
+import { uploadFileToIPFS } from "../utils/upload";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
 const erc721Address = process.env.NEXT_PUBLIC_ERC721_CONTRACT_ADDRESS;
-
-const client = ipfsHttpClient("https://ipfs.infura.io:5001/api/v0");
 
 function redirectPage(result) {
   const tokenId = result.toString();
@@ -27,22 +24,6 @@ export default function CreateItem() {
   const { isActive, account } = useWeb3React();
   const nftFileInput = useRef();
   useEffect(() => {
-    async function login() {
-      const res = await signIn("credentials", {
-        redirect: false,
-        wallet: account,
-      });
-      if (res !== undefined) {
-        const { error, url } = res;
-        console.log("res", res);
-        if (error) {
-          console.log("error", error);
-        }
-        if (url) {
-          console.log("url", url);
-        }
-      }
-    }
     if (!isActive) {
       Router.push(`/login?referrer=create`);
     } else {
@@ -68,14 +49,10 @@ export default function CreateItem() {
   async function onChange(e) {
     const file = e.target.files[0];
     try {
-      const added = await client.add(file, {
-        progress: (prog) => console.log(`received: ${prog}`),
-      });
-      const url = `https://ipfs.infura.io/ipfs/${added.path}`;
+      const url = await uploadFileToIPFS(file);
       setFileUrl(url);
       setValidateImageError("");
     } catch (error) {
-      console.log("Error uploading file: ", error);
       setValidateImageError(error);
     }
   }
@@ -88,8 +65,7 @@ export default function CreateItem() {
       image: fileUrl,
     });
     try {
-      const added = await client.add(data);
-      const url = `https://ipfs.infura.io/ipfs/${added.path}`;
+      const url = await uploadFileToIPFS(data);
       return url;
     } catch (error) {
       console.log("Error uploading file: ", error);
@@ -232,7 +208,7 @@ export default function CreateItem() {
       </Modal>
       <div className="flex justify-center">
         <div className="w-1/2 flex flex-col py-12">
-          <p className="text-3xl font-bold mb-6">Create new item</p>
+          <p className="text-4xl font-semibold mb-6">Create New Item</p>
           <div className="w-full flex-none text-xs font-medium text-gray-500 mt-2">
             <span className="text-red-600">*</span> Required field
           </div>
@@ -252,7 +228,7 @@ export default function CreateItem() {
           </label>
           <div
             onClick={() => nftFileInput.current.click()}
-            className="border-dashed border-[3px] border-gray-400 rounded-lg h-[257px] w-[350px] flex justify-center items-center cursor-pointer p-1"
+            className="border-dashed border-[3px] border-gray-300 rounded-lg h-[257px] w-[350px] flex justify-center items-center cursor-pointer p-1"
           >
             <div className="relative flex justify-center items-center hover:bg-gray-200/50 w-full h-full rounded-lg z-11">
               {fileUrl ? (
@@ -317,7 +293,7 @@ export default function CreateItem() {
             <textarea
               id="description"
               placeholder="Provide a detailed description of your item."
-              className="mt-2 border rounded p-4 w-full focus:shadow-lg focus-visible:outline-none"
+              className="mt-2 border rounded p-4 w-full focus:shadow-lg border-gray-300 focus:border-gray-300 focus:ring-0"
               onChange={(e) =>
                 updateFormInput({ ...formInput, description: e.target.value })
               }
@@ -335,7 +311,7 @@ export default function CreateItem() {
               onChange={(e) =>
                 updateFormInput({ ...formInput, collection: e.target.value })
               }
-              className="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 focus:shadow-lg focus-visible:outline-none"
+              className="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 focus:shadow-lg focus:border-gray-400 focus:ring-0"
             >
               <option defaultValue value="erc721">
                 UIT Token 721

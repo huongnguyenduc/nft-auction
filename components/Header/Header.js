@@ -572,8 +572,10 @@ function Header() {
             <div
               className="underline cursor-pointer hover:text-blue-500"
               onClick={() => {
-                setReferrer(currentLink);
-                openDrawer(drawerDispatch);
+                connector
+                  .activate(4)
+                  .then()
+                  .catch((e) => console.log("Cant switch network", e));
               }}
             >
               here

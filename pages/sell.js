@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { useRouter } from "next/router";
-import axios from "axios";
 import Web3Modal from "web3modal";
 import Image from "next/image";
 import DateRange from "../components/DateRange";
-import ERC721 from "../artifacts/contracts/UITToken721.sol/UITToken721.json";
-import ERC1155 from "../artifacts/contracts/UITToken1155.sol/UITToken1155.json";
-import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
+import ERC721 from "../contracts/UITToken721.json";
+import ERC1155 from "../contracts/UITToken1155.json";
+import NFTMarketplace from "../contracts/NFTMarketplace.json";
 import Router from "next/router";
 import { isNumeric } from "../utils/utils";
 import { Modal } from "rsuite";

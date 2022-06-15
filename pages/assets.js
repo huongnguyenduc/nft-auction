@@ -1,70 +1,51 @@
-import { ethers } from "ethers";
-import { useEffect, useState } from "react";
-import axios from "axios";
-// import Web3Modal from "web3modal";
+import { useState, useEffect, useCallback } from "react";
 import { SelectPicker } from "rsuite";
 import NFTItem from "../components/NFTItem";
 import styles from "../components/Assets/Assets.module.css";
-
-const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
-const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
-const erc721Address = process.env.NEXT_PUBLIC_ERC721_CONTRACT_ADDRESS;
-
-import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
+import { axiosFetcher } from "../utils/fetcher";
 import LoadingPage from "../components/Loading";
-// import { axiosFetcher } from "../utils/fetcher";
+import useSWRInfinite from "swr/infinite";
+import NFTItemSkeleton from "../components/NFTItemSkeleton";
+
+const PAGE_SIZE = 6;
 
 export default function Home() {
-  const [nfts, setNfts] = useState([]);
-  const [loadingState, setLoadingState] = useState("not-loaded");
-  useEffect(() => {
-    loadNFTs();
-  }, []);
-  async function loadNFTs() {
-    // const web3Modal = new Web3Modal();
-    // const connection = await web3Modal.connect();
-    // const provider = new ethers.providers.Web3Provider(connection);
-    const network = "rinkeby"; // use rinkeby testnet
-    const provider = ethers.getDefaultProvider(network);
-    const contract = new ethers.Contract(
-      marketplaceAddress,
-      NFTMarketplace.abi,
-      provider
-    );
-    const data = await contract.fetchAvailableMarketItems();
-
-    const items = await Promise.all(
-      data.map(async (i) => {
-        const tokenUri = i.isMultiToken
-          ? await contract.get1155TokenURI(i.tokenId.toString(), erc1155Address)
-          : await contract.get721TokenURI(i.tokenId.toString(), erc721Address);
-        const meta = await axios.get(tokenUri);
-        let price = ethers.utils.formatUnits(i.price.toString(), "ether");
-        let item = {
-          price,
-          tokenId: i.tokenId.toNumber(),
-          seller: i.seller,
-          owner: i.owner,
-          image: meta.data.image,
-          name: meta.data.name,
-          description: meta.data.description,
-          tokenUri: tokenUri,
-          isMultiToken: i.isMultiToken,
-          auctionInfo: i.auctionInfo,
-          sold: i.sold,
-          bidded: i.bidded,
-        };
-        return item;
-      })
-    );
-    setNfts(items);
-    setLoadingState("loaded");
-  }
+  const { data, error, size, setSize } = useSWRInfinite(
+    (index) => [`nft/listing?pageNumber=${index + 1}&pageSize=${PAGE_SIZE}`],
+    axiosFetcher
+  );
+  const nfts = data
+    ? [].concat(...data?.map((response) => response?.data?.nfts))
+    : [];
+  const isLoadingInitialData = !data && !error;
+  const isLoadingMore =
+    isLoadingInitialData ||
+    (size > 0 && data && typeof data[size - 1] === "undefined");
+  const isEmpty = data?.[0].data?.nfts?.length === 0;
+  const hasNoMore =
+    isEmpty || (data && data?.[0]?.data?.meta?.total === nfts?.length);
   const [isOpenFilter, setIsOpenFilter] = useState(true);
   const toggleFilter = () => setIsOpenFilter((state) => !state);
   const [isMoreGrid, setIsMoreGrid] = useState(false);
-  if (loadingState === "not-loaded") return <LoadingPage />;
-  if (loadingState === "loaded" && !nfts.length)
+  useEffect(() => {
+    window.addEventListener("scroll", reachEndCallback, false);
+    return () => {
+      window.removeEventListener("scroll", reachEndCallback, false);
+    };
+  }, [hasNoMore]);
+  function reachEnd() {
+    if (
+      window.innerHeight + window.scrollY >= document.body.offsetHeight &&
+      !hasNoMore
+    ) {
+      setSize((size) => size + 1);
+    }
+  }
+  const reachEndCallback = useCallback(() => {
+    reachEnd();
+  }, [hasNoMore]);
+  if (isLoadingInitialData) return <LoadingPage />;
+  if (isEmpty)
     return <h1 className="px-20 py-10 text-3xl">No items in marketplace</h1>;
   return (
     <>
@@ -145,7 +126,7 @@ export default function Home() {
         </div>
       </div>
       <div className="flex justify-center">
-        <div className="flex w-full px-8 max-w-[1600px]">
+        <div className="flex w-full px-8">
           <div
             className={`w-[180px] lg:w-[240px] xl:w-[300px] pt-2 pr-4 mr-4 border-r sticky top-[137px] h-[70vh] ${
               isOpenFilter ? "" : "hidden"
@@ -167,12 +148,26 @@ export default function Home() {
             className={`grid gap-4 flex-1 py-12 ${
               isMoreGrid
                 ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-                : " grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                : " grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             }`}
           >
             {nfts.map((nft, i) => (
-              <NFTItem nft={nft} key={nft.toString() + i.toString()} />
+              <NFTItem nft={nft} key={nft?.toString() + i.toString()} />
             ))}
+            {hasNoMore ? (
+              <></>
+            ) : isLoadingMore ? (
+              <>
+                <NFTItemSkeleton />
+                <NFTItemSkeleton />
+                <NFTItemSkeleton />
+                <NFTItemSkeleton />
+                <NFTItemSkeleton />
+                <NFTItemSkeleton />
+              </>
+            ) : (
+              <></>
+            )}
           </div>
         </div>
       </div>

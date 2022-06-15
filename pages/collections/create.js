@@ -1,5 +1,11 @@
 import Image from "next/image";
 import React from "react";
+import ERC721Contract from "../../artifacts/contracts/UITToken721.sol/UITToken721.json";
+import ERC1155Contract from "../../artifacts/contracts/UITToken1155.sol/UITToken1155.json";
+import Web3Modal from "web3modal";
+import { ethers } from "ethers";
+
+const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
 const CreateCollection = () => {
   const [collectionForm, setCollectionForm] = React.useState({
@@ -31,6 +37,38 @@ const CreateCollection = () => {
   }
   const avatarFileInput = React.useRef();
   const bannerFileInput = React.useRef();
+  async function createCollection() {
+    const web3Modal = new Web3Modal();
+    const connection = await web3Modal.connect();
+    const provider = new ethers.providers.Web3Provider(connection);
+    const signer = await provider.getSigner();
+    let contract;
+    try {
+      if (collectionForm.type === "erc1155") {
+        contract = new ethers.ContractFactory(
+          ERC1155Contract.abi,
+          ERC1155Contract.bytecode,
+          signer
+        );
+      } else {
+        contract = new ethers.ContractFactory(
+          ERC721Contract.abi,
+          ERC721Contract.bytecode,
+          signer
+        );
+      }
+      const collection = await contract.deploy(
+        collectionForm.name,
+        "UIT",
+        marketplaceAddress
+      );
+      await collection.deployed();
+      console.log(collection.address);
+      console.log(collection);
+    } catch (error) {
+      console.log("Unknown error: ", error);
+    }
+  }
   return (
     <div className="flex justify-center">
       <div className="w-2/3 flex flex-col py-12">
@@ -157,6 +195,12 @@ const CreateCollection = () => {
           <input
             id="name"
             placeholder="Enter name"
+            onChange={(e) => {
+              setCollectionForm((state) => ({
+                ...state,
+                name: e.target.value,
+              }));
+            }}
             className="border-2 rounded-lg p-3 w-full text-base mb-4 focus:shadow-lg focus-visible:outline-none"
           />
         </div>
@@ -196,7 +240,10 @@ const CreateCollection = () => {
           </select>
         </div>
         <div className="flex gap-4 items-center">
-          <button className="font-bold mt-6 bg-blue-500 text-white rounded-xl py-4 px-6">
+          <button
+            onClick={createCollection}
+            className="font-bold mt-6 bg-blue-500 text-white rounded-xl py-4 px-6"
+          >
             Create
           </button>
         </div>

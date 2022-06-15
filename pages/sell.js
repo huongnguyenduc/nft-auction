@@ -13,6 +13,7 @@ import { isNumeric } from "../utils/utils";
 import { Modal } from "rsuite";
 import styles from "../components/Modal/Modal.module.css";
 import { useWeb3React } from "@web3-react/core";
+import { axiosFetcher } from "../utils/fetcher";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
@@ -22,13 +23,11 @@ import Checked from "../components/Icon/Checked";
 
 export default function ResellNFT() {
   const router = useRouter();
-  const { id, tokenURI, isMultiToken } = router.query;
+  const { id } = router.query;
   const { isActive } = useWeb3React();
   useEffect(() => {
-    if (!isActive && id && tokenURI && isMultiToken) {
-      Router.push(
-        `/login?referrer=sell&id=${id}&tokenURI=${tokenURI}&isMultiToken=${isMultiToken}`
-      );
+    if (!isActive && id) {
+      Router.push(`/login?referrer=sell&id=${id}`);
     }
   }, [isActive]);
   const [isCreateAuction, setIsCreateAuction] = useState(false);
@@ -38,7 +37,7 @@ export default function ResellNFT() {
   const [validateError, setValidateError] = useState("");
   const [date, setDate] = useState([new Date(), addDays(new Date(), 6)]);
   const [formInput, updateFormInput] = useState({ price: "", image: "" });
-  const { image, price, name, description } = formInput;
+  const { image, price, name, description, isMultiToken } = formInput;
   const [listItemStatus, setListItemStatus] = useState("Input");
   const [listItemError, setListItemError] = useState();
 
@@ -47,14 +46,11 @@ export default function ResellNFT() {
   }, [id]);
 
   async function fetchNFT() {
-    if (!tokenURI) return;
-    const meta = await axios.get(tokenURI);
-    updateFormInput((state) => ({
-      ...state,
-      image: meta.data.image,
-      name: meta.data.name,
-      description: meta.data.description,
-    }));
+    const detailResponse = await axiosFetcher(`nft/id/${id}`);
+    updateFormInput({
+      ...detailResponse,
+      price: 0,
+    });
   }
 
   async function listNFTForSale() {
@@ -92,16 +88,12 @@ export default function ResellNFT() {
           priceFormatted,
           {
             value: listingPrice,
-            // gasLimit: 1000000,
-            // gasPrice: ethers.utils.parseUnits("1.0", "gwei"),
           }
         );
         await transaction.wait();
       } else {
         let transaction = await contract.listMarketItem(id, priceFormatted, {
           value: listingPrice,
-          // gasLimit: 2000000,
-          // gasPrice: ethers.utils.parseUnits("1.0", "gwei"),
         });
         await transaction.wait();
       }
@@ -119,9 +111,7 @@ export default function ResellNFT() {
         onClose={() => {
           handleCloseModal();
           if (listItemStatus === "Listed") {
-            Router.push(
-              `/detail?id=${id}&tokenURI=${tokenURI}&isMultiToken=${isMultiToken}`
-            );
+            Router.push(`/detail?id=${id}`);
           }
         }}
         className={styles.customModal}
@@ -141,9 +131,7 @@ export default function ResellNFT() {
               {image && <img className="rounded" width="180" src={image} />}
               <button
                 onClick={() => {
-                  Router.push(
-                    `/detail?id=${id}&tokenURI=${tokenURI}&isMultiToken=${isMultiToken}`
-                  );
+                  Router.push(`/detail?id=${id}`);
                 }}
                 className="w-full py-3 mt-8 bg-blue-600 hover:bg-blue-700 transition ease-in rounded-xl text-white font-semibold text-base"
               >
@@ -157,9 +145,7 @@ export default function ResellNFT() {
                   {image && <img className="rounded" width="48" src={image} />}
                   <div>
                     <p className="text-gray-500 text-xs">
-                      {isMultiToken === "false"
-                        ? "UITToken721"
-                        : "UITToken1155"}
+                      {isMultiToken === false ? "UITToken721" : "UITToken1155"}
                     </p>
                     <p className="font-semibold text-sm mt-[0px]">{name}</p>
                     <p className="text-gray-500 text-xs mt-[0px]">

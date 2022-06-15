@@ -7,38 +7,34 @@ import Router from "next/router";
 const NFTItem = ({ nft }) => {
   return (
     <div
-      onClick={() =>
-        Router.push(
-          `/detail?id=${nft.tokenId}&tokenURI=${nft.tokenUri}&isMultiToken=${nft.isMultiToken}`
-        )
-      }
+      onClick={() => Router.push(`/detail?id=${nft.tokenId}`)}
       className="flex flex-col border cursor-pointer shadow rounded-xl overflow-hidden bg-white transition ease-out hover:shadow-lg aspect-[3/4]"
     >
       <div className="flex h-full items-center">
-        <img src={nft.image} className="rounded object-contain w-full" />
+        <img src={nft?.image} className="rounded object-contain w-full" />
       </div>
       <div className="p-3">
         <div className="flex justify-between">
           <div>
             <p className="text-xs font-base pr-1 text-gray-500">
-              {nft.isMultiToken ? "UITToken1155" : "UITToken721"}
+              {nft?.isMultiToken ? "UITToken1155" : "UITToken721"}
             </p>
-            <p className="text-xs font-semibold mt-0">{nft.name}</p>
+            <p className="text-xs font-semibold mt-0">{nft?.name}</p>
           </div>
-          {nft.bidded && nft.sold ? (
+          {nft?.bidded && nft?.sold ? (
             <></>
           ) : (
             <div className="flex flex-col items-end gap-1">
               <p className="text-xs font-thin">
-                {nft.bidded ? "Price" : "Min Bid"}
+                {nft?.bidded ? "Price" : "Min Bid"}
               </p>
               <div className="flex justify-end">
                 <p className="text-xs font-semibold pr-1">
-                  {nft.bidded
-                    ? nft.price
-                    : nft.auctionInfo.highestBid.toString() !== "0"
-                    ? convertWeiToEther(nft.auctionInfo.highestBid)
-                    : convertWeiToEther(nft.auctionInfo.startingPrice)}
+                  {nft?.bidded
+                    ? nft?.price
+                    : nft?.auctionInfo.highestBid.toString() !== "0"
+                    ? convertWeiToEther(nft?.auctionInfo.highestBid)
+                    : convertWeiToEther(nft?.auctionInfo.startingPrice)}
                 </p>
                 <Image
                   src="https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg"

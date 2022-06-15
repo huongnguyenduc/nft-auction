@@ -484,7 +484,7 @@ function Header() {
         <div className="flex items-center">
           <p
             ref={hoverExploreRef}
-            onClick={() => goToPage("/collectibles")}
+            onClick={() => Router.push("/collectibles")}
             className={`${
               isHoveredExplore || isHoveredExploreMenu
                 ? "text-gray-800"

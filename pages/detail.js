@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
-import axios from "axios";
 import Image from "next/image";
 import { ethers } from "ethers";
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
@@ -15,6 +14,8 @@ import useBalance from "../components/useBalance";
 import styles from "../components/Modal/Modal.module.css";
 import NotificationUI from "../components/Notification";
 import LoadingUI from "../components/LoadingUI";
+import { axiosFetcher } from "../utils/fetcher";
+import { useDrawerDispatch, openDrawer } from "../components/useDrawer";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
@@ -28,21 +29,51 @@ const dateOptions = {
   timeZoneName: "shortOffset",
 };
 
+const initialNFT = {
+  nftContract: "",
+  seller: "",
+  owner: "",
+  price: "",
+  sold: "",
+  bidded: "",
+  image: "",
+  name: "",
+  description: "",
+  isMultiToken: "",
+  auctionInfo: {
+    startAt: "",
+    endAt: "",
+    highestBid: "",
+    highestBidder: "",
+    highestBidTime: "",
+    bids: [],
+    startingPrice: "",
+  },
+};
+
 function NFTDetail() {
   const router = useRouter();
-  const { id, tokenURI, isMultiToken } = router.query;
-  const { account: userAccount, provider } = useWeb3React();
+  const { id } = router.query;
+  const { account: userAccount, provider, isActive } = useWeb3React();
+  const drawerDispatch = useDrawerDispatch();
   const userBalance = useBalance(provider, userAccount);
   const [openBidModal, setOpenBidModal] = useState(false);
-  const handleOpenModal = () => setOpenBidModal(true);
+  const handleOpenModal = () => {
+    if (!isActive) {
+      openDrawer(drawerDispatch);
+    } else setOpenBidModal(true);
+  };
   const handleCloseModal = () => setOpenBidModal(false);
-  const [formInput, updateFormInput] = useState({ price: "", image: "" });
   const toaster = useToaster();
   const [hasBidRequesting, setHasBidRequesting] = useState(false);
   const [hasBuyRequesting, setHasBuyRequesting] = useState("onSale");
   const [buyError, setBuyError] = useState();
   const [openBuyModal, setOpenBuyModal] = useState(false);
-  const handleOpenBuyModal = () => setOpenBuyModal(true);
+  const handleOpenBuyModal = () => {
+    if (!isActive) {
+      openDrawer(drawerDispatch);
+    } else setOpenBuyModal(true);
+  };
   const handleCloseBuyModal = () => {
     setOpenBuyModal(false);
     setHasBuyRequesting("onSale");
@@ -52,197 +83,172 @@ function NFTDetail() {
   const [hasCancelListRequesting, setHasCancelListRequesting] = useState(false);
   const [hasCancelBidRequesting, setHasCancelBidRequesting] = useState(false);
 
-  const [nftData, setNftData] = useState({
-    nftContract: "",
-    seller: "",
-    owner: "",
-    price: "",
-    sold: "",
-    bidded: "",
-    isMultiToken: "",
-    auctionInfo: {
-      startAt: "",
-      endAt: "",
-      highestBid: "",
-      highestBidder: "",
-      highestBidTime: "",
-      bids: [],
-      startingPrice: "",
-    },
-  });
-  const { image, name, description } = formInput;
+  const [nftData, setNftData] = useState(initialNFT);
+  const { image, name, description, isMultiToken } = nftData;
 
   const [placeBidPrice, setPlaceBidPrice] = useState(
     nftData?.auctionInfo?.startingPrice
   );
   const [validateBidError, setValidateBidError] = useState("");
 
-  useEffect(() => {
-    fetchNFT();
-  }, [id]);
-
   async function fetchNFT() {
-    if (!tokenURI) return;
-    // const web3Modal = new Web3Modal();
-    // const connection = await web3Modal.connect();
-    // const provider = new ethers.providers.Web3Provider(connection);
-    const network = "rinkeby"; // use rinkeby testnet
-    const provider = ethers.getDefaultProvider(network);
-    let contract = new ethers.Contract(
-      marketplaceAddress,
-      NFTMarketplace.abi,
-      provider
-    );
-    const data = await contract.fetchMarketItem(id);
-    setNftData(data);
-    console.log(data);
-    const meta = await axios.get(tokenURI);
-    updateFormInput((state) => ({
-      ...state,
-      image: meta.data.image,
-      name: meta.data.name,
-      description: meta.data.description,
-    }));
+    const detailResponse = await axiosFetcher(`nft/id/${id}`);
+    setNftData(detailResponse.data ? detailResponse.data : initialNFT);
   }
 
-  async function cancelListing() {
-    try {
-      const web3Modal = new Web3Modal();
-      const connection = await web3Modal.connect();
-      const provider = new ethers.providers.Web3Provider(connection);
-      const signer = provider.getSigner();
-      let contract = new ethers.Contract(
-        marketplaceAddress,
-        NFTMarketplace.abi,
-        signer
-      );
-      setHasCancelListRequesting(true);
-      let transaction = await contract.cancelListingItem(id);
-      await transaction.wait();
-      setHasCancelListRequesting(false);
-      const data = await contract.fetchMarketItem(id);
-      setNftData(data);
-      const successCode = toaster.push(
-        <NotificationUI message="Cancel list successfully." type="success" />,
-        { placement: "bottomStart" }
-      );
-      setTimeout(() => toaster.remove(successCode), 2500);
-    } catch (error) {
-      setHasCancelListRequesting(false);
-      const failureCode = toaster.push(
-        <NotificationUI message={error.message} type="error" />,
-        { placement: "bottomStart" }
-      );
-      setTimeout(() => toaster.remove(failureCode), 2500);
+  useEffect(() => {
+    if (id) {
+      fetchNFT();
     }
+  }, [id]);
+
+  async function cancelListing() {
+    if (!isActive) {
+      openDrawer(drawerDispatch);
+    } else
+      try {
+        const web3Modal = new Web3Modal();
+        const connection = await web3Modal.connect();
+        const provider = new ethers.providers.Web3Provider(connection);
+        const signer = provider.getSigner();
+        let contract = new ethers.Contract(
+          marketplaceAddress,
+          NFTMarketplace.abi,
+          signer
+        );
+        setHasCancelListRequesting(true);
+        let transaction = await contract.cancelListingItem(id);
+        await transaction.wait();
+        setHasCancelListRequesting(false);
+        const successCode = toaster.push(
+          <NotificationUI message="Cancel list successfully." type="success" />,
+          { placement: "bottomStart" }
+        );
+        await fetchNFT();
+        setTimeout(() => toaster.remove(successCode), 2500);
+      } catch (error) {
+        setHasCancelListRequesting(false);
+        const failureCode = toaster.push(
+          <NotificationUI message={error.message} type="error" />,
+          { placement: "bottomStart" }
+        );
+        setTimeout(() => toaster.remove(failureCode), 2500);
+      }
   }
 
   async function buyNft() {
-    try {
-      const web3Modal = new Web3Modal();
-      const connection = await web3Modal.connect();
-      const provider = new ethers.providers.Web3Provider(connection);
-      const signer = provider.getSigner();
-      let contract = new ethers.Contract(
-        marketplaceAddress,
-        NFTMarketplace.abi,
-        signer
-      );
-      setHasBuyRequesting("buying");
-      let transaction = await contract.createMarketSale(id, {
-        value: nftData.price,
-      });
-      await transaction.wait();
-      setHasBuyRequesting("done");
-      const data = await contract.fetchMarketItem(id);
-      setNftData(data);
-    } catch (error) {
-      setHasBuyRequesting("error");
-      setBuyError(error.message);
-    }
+    if (!isActive) {
+      openDrawer(drawerDispatch);
+    } else
+      try {
+        const web3Modal = new Web3Modal();
+        const connection = await web3Modal.connect();
+        const provider = new ethers.providers.Web3Provider(connection);
+        const signer = provider.getSigner();
+        let contract = new ethers.Contract(
+          marketplaceAddress,
+          NFTMarketplace.abi,
+          signer
+        );
+        setHasBuyRequesting("buying");
+        let transaction = await contract.createMarketSale(id, {
+          value: nftData.price,
+        });
+        await transaction.wait();
+        setHasBuyRequesting("done");
+        await fetchNFT();
+      } catch (error) {
+        setHasBuyRequesting("error");
+        setBuyError(error.message);
+      }
   }
 
   async function bid() {
-    try {
-      const web3Modal = new Web3Modal();
-      const connection = await web3Modal.connect();
-      const provider = new ethers.providers.Web3Provider(connection);
-      const signer = provider.getSigner();
-      const placeBidPriceFormatted = ethers.utils.parseUnits(
-        placeBidPrice,
-        "ether"
-      );
-      let contract = new ethers.Contract(
-        marketplaceAddress,
-        NFTMarketplace.abi,
-        signer
-      );
-      setHasBidRequesting(true);
-      let transaction = await contract.bid(id, {
-        value: placeBidPriceFormatted,
-      });
-      await transaction.wait();
-      setHasBidRequesting(false);
-      const data = await contract.fetchMarketItem(id);
-      setNftData(data);
-      handleCloseModal();
-      const successCode = toaster.push(
-        <NotificationUI
-          message="Your offer has been submitted."
-          type="success"
-        />,
-        { placement: "bottomStart" }
-      );
-      setTimeout(() => toaster.remove(successCode), 2500);
-    } catch (error) {
-      setHasBidRequesting(false);
-      const failureCode = toaster.push(
-        <NotificationUI message={error.message} type="error" />,
-        { placement: "bottomStart" }
-      );
-      setTimeout(() => toaster.remove(failureCode), 2500);
-    }
+    if (!isActive) {
+      openDrawer(drawerDispatch);
+    } else
+      try {
+        const web3Modal = new Web3Modal();
+        const connection = await web3Modal.connect();
+        const provider = new ethers.providers.Web3Provider(connection);
+        const signer = provider.getSigner();
+        const placeBidPriceFormatted = ethers.utils.parseUnits(
+          placeBidPrice,
+          "ether"
+        );
+        let contract = new ethers.Contract(
+          marketplaceAddress,
+          NFTMarketplace.abi,
+          signer
+        );
+        setHasBidRequesting(true);
+        let transaction = await contract.bid(id, {
+          value: placeBidPriceFormatted,
+        });
+        await transaction.wait();
+        setHasBidRequesting(false);
+        await fetchNFT();
+        handleCloseModal();
+        const successCode = toaster.push(
+          <NotificationUI
+            message="Your offer has been submitted."
+            type="success"
+          />,
+          { placement: "bottomStart" }
+        );
+        setTimeout(() => toaster.remove(successCode), 2500);
+      } catch (error) {
+        setHasBidRequesting(false);
+        const failureCode = toaster.push(
+          <NotificationUI message={error.message} type="error" />,
+          { placement: "bottomStart" }
+        );
+        setTimeout(() => toaster.remove(failureCode), 2500);
+      }
   }
 
   async function cancelBid() {
-    try {
-      const web3Modal = new Web3Modal();
-      const connection = await web3Modal.connect();
-      const provider = new ethers.providers.Web3Provider(connection);
-      const signer = provider.getSigner();
-      let contract = new ethers.Contract(
-        marketplaceAddress,
-        NFTMarketplace.abi,
-        signer
-      );
-      setHasCancelBidRequesting(true);
-      let transaction = await contract.withdrawBid(id);
-      await transaction.wait();
-      setHasCancelBidRequesting(false);
-      const data = await contract.fetchMarketItem(id);
-      setNftData(data);
-      const successCode = toaster.push(
-        <NotificationUI message="Cancel bid successfully" type="success" />,
-        { placement: "bottomStart" }
-      );
-      setTimeout(() => toaster.remove(successCode), 2500);
-    } catch (error) {
-      setHasCancelBidRequesting(false);
-      console.log("Unknown error: ", error);
-      const failureCode = toaster.push(
-        <NotificationUI message={error.message} type="error" />,
-        { placement: "bottomStart" }
-      );
-      setTimeout(() => toaster.remove(failureCode), 2500);
-    }
+    if (!isActive) {
+      openDrawer(drawerDispatch);
+    } else
+      try {
+        const web3Modal = new Web3Modal();
+        const connection = await web3Modal.connect();
+        const provider = new ethers.providers.Web3Provider(connection);
+        const signer = provider.getSigner();
+        let contract = new ethers.Contract(
+          marketplaceAddress,
+          NFTMarketplace.abi,
+          signer
+        );
+        setHasCancelBidRequesting(true);
+        let transaction = await contract.withdrawBid(id);
+        await transaction.wait();
+        setHasCancelBidRequesting(false);
+        await fetchNFT();
+        const successCode = toaster.push(
+          <NotificationUI message="Cancel bid successfully" type="success" />,
+          { placement: "bottomStart" }
+        );
+        setTimeout(() => toaster.remove(successCode), 2500);
+      } catch (error) {
+        setHasCancelBidRequesting(false);
+        console.log("Unknown error: ", error);
+        const failureCode = toaster.push(
+          <NotificationUI message={error.message} type="error" />,
+          { placement: "bottomStart" }
+        );
+        setTimeout(() => toaster.remove(failureCode), 2500);
+      }
   }
 
   const isOwner = useMemo(
     () =>
       userAccount
-        ? userAccount.toString().toLowerCase() ===
-            nftData.seller.toLowerCase() ||
-          userAccount.toString().toLowerCase() === nftData.owner.toLowerCase()
+        ? userAccount?.toString()?.toLowerCase() ===
+            nftData?.seller?.toLowerCase() ||
+          userAccount?.toString().toLowerCase() ===
+            nftData?.owner?.toLowerCase()
         : false,
     [userAccount, nftData]
   );
@@ -360,9 +366,7 @@ function NFTDetail() {
                   {image && <img className="rounded" width="48" src={image} />}
                   <div>
                     <p className="text-gray-500 text-xs">
-                      {isMultiToken === "false"
-                        ? "UITToken721"
-                        : "UITToken1155"}
+                      {isMultiToken === false ? "UITToken721" : "UITToken1155"}
                     </p>
                     <p className="font-semibold text-sm mt-[0px]">{name}</p>
                     <p className="text-gray-500 text-xs mt-[0px]">
@@ -442,11 +446,7 @@ function NFTDetail() {
             <div className="flex gap-2 w-full">
               <button
                 className={`transition border-2 hover:shadow ease-in bg-white text-blue-500 focus:ring-2 focus:ring-blue-200 font-semibold rounded-lg text-sm px-8 py-4 mr-2 flex-1`}
-                onClick={() =>
-                  router.push(
-                    `/sell?id=${id}&tokenURI=${tokenURI}&isMultiToken=${isMultiToken}`
-                  )
-                }
+                onClick={() => router.push(`/sell?id=${id}`)}
               >
                 List for sale
               </button>
@@ -472,9 +472,7 @@ function NFTDetail() {
                   type="button"
                   className="text-white transition ease-in bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-16 py-4 mr-2"
                   onClick={() => {
-                    router.push(
-                      `/sell?id=${id}&tokenURI=${tokenURI}&isMultiToken=${isMultiToken}`
-                    );
+                    router.push(`/sell?id=${id}`);
                   }}
                 >
                   Sell

@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { create as ipfsHttpClient } from "ipfs-http-client";
 import Web3Modal from "web3modal";
-import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 import Router from "next/router";
 import { useWeb3React } from "@web3-react/core";
 import LoadingUI from "../components/LoadingUI";
 import { Modal } from "rsuite";
 import styles from "../components/Modal/Modal.module.css";
 import Checked from "../components/Icon/Checked";
-import { v4 as uuidv4 } from "uuid";
+import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
+import { signIn } from "next-auth/react";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
@@ -17,20 +17,34 @@ const erc721Address = process.env.NEXT_PUBLIC_ERC721_CONTRACT_ADDRESS;
 
 const client = ipfsHttpClient("https://ipfs.infura.io:5001/api/v0");
 
-function redirectPage(result, tokenUri, collection) {
+function redirectPage(result) {
   const tokenId = result.toString();
-  Router.push(
-    `/detail?id=${tokenId}&tokenURI=${tokenUri}&isMultiToken=${
-      collection === "erc1155"
-    }`
-  );
+  Router.push(`/detail?id=${tokenId}`);
 }
 
 export default function CreateItem() {
-  const { isActive } = useWeb3React();
+  const { isActive, account } = useWeb3React();
   useEffect(() => {
+    async function login() {
+      const res = await signIn("credentials", {
+        redirect: false,
+        wallet: account,
+      });
+      if (res !== undefined) {
+        const { error, url } = res;
+        console.log("res", res);
+        if (error) {
+          console.log("error", error);
+        }
+        if (url) {
+          console.log("url", url);
+        }
+      }
+    }
     if (!isActive) {
       Router.push(`/login?referrer=create`);
+    } else {
+      login();
     }
   }, [isActive]);
 
@@ -98,11 +112,6 @@ export default function CreateItem() {
       );
       let listingPrice = await contract.getListingPrice();
       listingPrice = listingPrice.toString();
-      // provider.once("block", () => {
-      //   contract.on("MarketItemCreated", (result) =>
-      //     redirectPage(result, tokenUri, collection)
-      //   );
-      // });
       let transaction = await contract.createMarketItem(
         collection === "erc1155" ? erc1155Address : erc721Address,
         tokenUri,
@@ -112,7 +121,7 @@ export default function CreateItem() {
       const event = rc.events.find(
         (event) => event.event === "MarketItemCreated"
       );
-      redirectPage(event.args[0], tokenUri, collection);
+      redirectPage(event.args[0]);
       setIsMinting(false);
       handleCloseModal();
       setCreateTokenError("");

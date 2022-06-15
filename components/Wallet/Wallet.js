@@ -56,8 +56,9 @@ export function WalletContainer({
       try {
         if (isDrawerOpen) {
           closeDrawer(drawerDispatch);
+        } else {
+          Router.push(`${referrer}`);
         }
-        Router.push(`${referrer}`);
       } catch (e) {
         console.log("Error when login: ", e);
       }

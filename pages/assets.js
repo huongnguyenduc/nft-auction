@@ -151,9 +151,13 @@ export default function Home() {
                 : " grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             }`}
           >
-            {nfts.map((nft, i) => (
-              <NFTItem nft={nft} key={nft?.toString() + i.toString()} />
-            ))}
+            {nfts && nfts.length > 0 ? (
+              nfts.map((nft, i) => (
+                <NFTItem nft={nft} key={nft?.toString() + i.toString()} />
+              ))
+            ) : (
+              <></>
+            )}
             {hasNoMore ? (
               <></>
             ) : isLoadingMore ? (

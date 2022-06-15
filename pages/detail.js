@@ -363,7 +363,17 @@ function NFTDetail() {
               <p className="text-lg font-semibold mb-4 mt-4">Item</p>
               <div className="flex justify-between items-center py-8 border-t border-b">
                 <div className="flex gap-2 items-center">
-                  {image && <img className="rounded" width="48" src={image} />}
+                  {image && (
+                    <div className="rounded overflow-hidden">
+                      <Image
+                        width={48}
+                        height={48}
+                        src={image}
+                        alt="nft-image"
+                        objectFit="contain"
+                      />
+                    </div>
+                  )}
                   <div>
                     <p className="text-gray-500 text-xs">
                       {isMultiToken === false ? "UITToken721" : "UITToken1155"}
@@ -416,7 +426,17 @@ function NFTDetail() {
             </div>
           ) : hasBuyRequesting === "done" ? (
             <div className="flex flex-col gap-4 items-center">
-              {image && <img className="rounded" width="120" src={image} />}
+              {image && (
+                <div className="rounded w-[120px] overflow-hidden">
+                  <Image
+                    width={120}
+                    height={120}
+                    src={image}
+                    alt="nft-image-modal"
+                    objectFit="contain"
+                  />
+                </div>
+              )}
               <p className="text-base text-gray-600 text-center">
                 You are now the proud owner of {name} from the{" "}
                 {isMultiToken ? "UITToken1155" : "UITToken721"} collection.

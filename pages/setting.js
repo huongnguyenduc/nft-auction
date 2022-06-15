@@ -1,5 +1,6 @@
 import React from "react";
 import Head from "next/head";
+import Image from "next/image";
 
 const Setting = () => {
   return (
@@ -76,21 +77,22 @@ const Setting = () => {
               <p htmlFor="avatar" className="font-semibold text-base mb-2">
                 Profile Image
               </p>
-              <div className="w-[150px] h-[150px] rounded-[150px] mb-4">
-                <img
+              <div className="w-[150px] h-[150px] rounded-[150px] mb-4 relative overflow-hidden">
+                <Image
+                  layout="fill"
                   src="https://lh3.googleusercontent.com/_70_WkLyBXX9bpKfA1vzWAJM0samNsL13jwIKSl0Lh-jC2LdipKLKJi8fCZfGgDb8ljAyCm2dzYsj1ifg180hGxa-n0F9zHwFj8-EyI=s150"
                   alt="user-avatar"
-                  className="rounded-[150px]"
                 />
               </div>
               <p htmlFor="banner" className="font-semibold text-base mb-2">
                 Profile Banner
               </p>
-              <div className="max-w-[420px] min-h-[130px] h-[130px] rounded-xl mb-4 overflow-hidden">
-                <img
+              <div className="max-w-[420px] min-h-[130px] h-[130px] rounded-xl mb-4 overflow-hidden relative">
+                <Image
+                  layout="fill"
+                  objectFit="cover"
                   src="https://lh3.googleusercontent.com/_70_WkLyBXX9bpKfA1vzWAJM0samNsL13jwIKSl0Lh-jC2LdipKLKJi8fCZfGgDb8ljAyCm2dzYsj1ifg180hGxa-n0F9zHwFj8-EyI=s150"
                   alt="user-banner"
-                  className="rounded-xl object-contain h-full"
                 />
               </div>
             </div>

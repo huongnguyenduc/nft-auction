@@ -74,12 +74,12 @@ export default function MyAssets() {
               setTabState("collected");
               loadNFTs();
             }}
-            className={`flex gap-2 ${
-              tabState === "collected" ? "border-b-2" : ""
+            className={`flex ${
+              tabState === "collected" ? "border-b-2" : "text-gray-500"
             } border-black items-center pb-2 cursor-pointer`}
           >
             <p className="font-semibold text-lg">Collected</p>
-            <p className="text-lg font-normal mt-0">
+            <p className="text-lg font-normal mt-0 ml-2">
               {nfts.length > 0 ? nfts.length : ""}
             </p>
           </div>
@@ -88,12 +88,12 @@ export default function MyAssets() {
               setTabState("onSale");
               loadListedNFTs();
             }}
-            className={`flex gap-2 ${
-              tabState === "onSale" ? "border-b-2" : ""
-            } border-black items-center pb-2 text-gray-500 cursor-pointer`}
+            className={`flex ${
+              tabState === "onSale" ? "border-b-2" : "text-gray-500"
+            } border-black items-center pb-2 cursor-pointer`}
           >
             <p className="font-semibold text-lg">On sale</p>
-            <p className="text-lg font-normal mt-0">
+            <p className="text-lg font-normal mt-0 ml-2">
               {listedNfts.length > 0 ? listedNfts.length : ""}
             </p>
           </div>
@@ -103,11 +103,11 @@ export default function MyAssets() {
               loadBiddingNFTs();
             }}
             className={`flex ${
-              tabState === "bidding" ? "border-b-2" : ""
-            } gap-2 border-black items-center pb-2 text-gray-500 cursor-pointer`}
+              tabState === "bidding" ? "border-b-2" : "text-gray-500"
+            } border-black items-center pb-2 cursor-pointer`}
           >
             <p className="font-semibold text-lg">Bidding</p>
-            <p className="text-lg font-normal mt-0">
+            <p className="text-lg font-normal mt-0 ml-2">
               {biddingNfts.length > 0 ? biddingNfts.length : ""}
             </p>
           </div>

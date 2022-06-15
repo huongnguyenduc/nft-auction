@@ -7,10 +7,11 @@ const nextConfig = {
       "openseauserdata.com",
       "testnets.opensea.io",
       "static.opensea.io",
+      "ipfs.infura.io",
+      "lh3.googleusercontent.com",
       "",
     ],
   },
-  presets: ["next/babel"],
   webpack(config) {
     config.module.rules.push({
       test: /\^(?!tailwind.css).(le|c)ss$/,

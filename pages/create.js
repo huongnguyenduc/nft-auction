@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ethers } from "ethers";
 import { create as ipfsHttpClient } from "ipfs-http-client";
 import Web3Modal from "web3modal";
@@ -10,6 +10,7 @@ import styles from "../components/Modal/Modal.module.css";
 import Checked from "../components/Icon/Checked";
 import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 import { signIn } from "next-auth/react";
+import Image from "next/image";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const erc1155Address = process.env.NEXT_PUBLIC_ERC1155_CONTRACT_ADDRESS;
@@ -24,6 +25,7 @@ function redirectPage(result) {
 
 export default function CreateItem() {
   const { isActive, account } = useWeb3React();
+  const nftFileInput = useRef();
   useEffect(() => {
     async function login() {
       const res = await signIn("credentials", {
@@ -44,7 +46,7 @@ export default function CreateItem() {
     if (!isActive) {
       Router.push(`/login?referrer=create`);
     } else {
-      login();
+      // login();
     }
   }, [isActive]);
 
@@ -150,7 +152,17 @@ export default function CreateItem() {
         <Modal.Body>
           <div className="flex justify-between items-center">
             <div className="flex gap-2 items-center">
-              {fileUrl && <img className="rounded" width="48" src={fileUrl} />}
+              {fileUrl && (
+                <div className="rounded overflow-hidden">
+                  <Image
+                    width={48}
+                    height={48}
+                    src={fileUrl}
+                    alt="nft-image"
+                    objectFit="contain"
+                  />
+                </div>
+              )}
               <div>
                 <p className="text-gray-500 text-xs">
                   {formInput.collection === "erc721"
@@ -221,28 +233,62 @@ export default function CreateItem() {
       <div className="flex justify-center">
         <div className="w-1/2 flex flex-col py-12">
           <p className="text-3xl font-bold mb-6">Create new item</p>
-          <div className="w-full flex-none text-sm font-small text-slate-700 mt-2">
+          <div className="w-full flex-none text-xs font-medium text-gray-500 mt-2">
             <span className="text-red-600">*</span> Required field
           </div>
           <input
             type="file"
-            name="Asset"
-            className="block w-full text-sm mt-6 text-slate-500
-      file:mr-4 file:py-2 file:px-4
-      file:rounded-full file:border-0
-      file:text-sm file:font-semibold
-      file:bg-blue-50 file:text-blue-700
-      hover:file:bg-blue-100 file:cursor-pointer cursor-pointer"
+            id="asset"
+            name="asset"
+            className="hidden"
             onChange={onChange}
+            ref={nftFileInput}
           />
-          {fileUrl && (
-            <img className="rounded mt-4" width="350" src={fileUrl} />
-          )}
+          <label
+            htmlFor="asset"
+            className="block mb-2 text-base font-semibold text-gray-900 mt-4"
+          >
+            Image <span className="text-red-600">*</span>
+          </label>
+          <div
+            onClick={() => nftFileInput.current.click()}
+            className="border-dashed border-[3px] border-gray-400 rounded-lg h-[257px] w-[350px] flex justify-center items-center cursor-pointer p-1"
+          >
+            <div className="relative flex justify-center items-center hover:bg-gray-200/50 w-full h-full rounded-lg z-11">
+              {fileUrl ? (
+                <div className="absolute rounded-lg overflow-hidden w-full h-full z-10">
+                  <Image
+                    layout="fill"
+                    src={fileUrl}
+                    unoptimized={true}
+                    objectFit="cover"
+                    alt="avatar-image"
+                  />
+                </div>
+              ) : (
+                <></>
+              )}
+              <svg
+                className="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium MuiSvgIcon-root MuiSvgIcon-fontSizeLarge css-1shn170"
+                focusable="false"
+                height="84"
+                width="84"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                data-testid="ImageIcon"
+                tabIndex="-1"
+                title="Image"
+                fill="rgb(156 163 175)"
+              >
+                <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"></path>
+              </svg>
+            </div>
+          </div>
           <p className="text-red-500 mt-2">{validateImageError}</p>
           <div className="mt-6">
             <label
               htmlFor="name"
-              className="block mb-2 text-md font-medium text-gray-900"
+              className="block mb-2 text-base font-semibold text-gray-900"
             >
               Name <span className="text-red-600">*</span>
             </label>
@@ -264,7 +310,7 @@ export default function CreateItem() {
           <div className="mt-6">
             <label
               htmlFor="description"
-              className="block mb-2 text-md font-medium text-gray-900"
+              className="block mb-2 text-base font-semibold text-gray-900"
             >
               Description
             </label>
@@ -280,7 +326,7 @@ export default function CreateItem() {
           <div className="mt-6">
             <label
               htmlFor="collection"
-              className="block mb-2 text-md font-medium text-gray-900"
+              className="block mb-2 text-base font-semibold text-gray-900"
             >
               Collection
             </label>

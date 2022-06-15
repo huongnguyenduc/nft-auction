@@ -154,11 +154,14 @@ function Header() {
                   >
                     <div className="flex gap-2 items-center cursor-pointer">
                       <div className="w-[30px] h-[30px] rounded-[50%] border-2 flex justify-center items-center">
-                        <img
-                          src="https://lh3.googleusercontent.com/_70_WkLyBXX9bpKfA1vzWAJM0samNsL13jwIKSl0Lh-jC2LdipKLKJi8fCZfGgDb8ljAyCm2dzYsj1ifg180hGxa-n0F9zHwFj8-EyI=s60"
-                          alt="avatar-drawer"
-                          className="w-[26px] h-[26px] rounded-[50%]"
-                        />
+                        <div className="w-[26px] h-[26px] rounded-[50%] relative overflow-hidden">
+                          <Image
+                            layout="fill"
+                            objectFit="cover"
+                            src="https://lh3.googleusercontent.com/_70_WkLyBXX9bpKfA1vzWAJM0samNsL13jwIKSl0Lh-jC2LdipKLKJi8fCZfGgDb8ljAyCm2dzYsj1ifg180hGxa-n0F9zHwFj8-EyI=s60"
+                            alt="avatar-drawer"
+                          />
+                        </div>
                       </div>
                       <p className="text-base font-semibold">duchuong007</p>
                       <svg
@@ -506,11 +509,14 @@ function Header() {
           >
             {isActive ? (
               <div className="w-[32px] h-[32px] rounded-[50%] border-2 flex justify-center items-center">
-                <img
-                  src="https://lh3.googleusercontent.com/_70_WkLyBXX9bpKfA1vzWAJM0samNsL13jwIKSl0Lh-jC2LdipKLKJi8fCZfGgDb8ljAyCm2dzYsj1ifg180hGxa-n0F9zHwFj8-EyI=s60"
-                  alt="avatar-drawer"
-                  className="w-[26px] h-[26px] rounded-[50%]"
-                />
+                <div className="w-[26px] h-[26px] rounded-[50%] relative overflow-hidden">
+                  <Image
+                    layout="fill"
+                    objectFit="cover"
+                    src="https://lh3.googleusercontent.com/_70_WkLyBXX9bpKfA1vzWAJM0samNsL13jwIKSl0Lh-jC2LdipKLKJi8fCZfGgDb8ljAyCm2dzYsj1ifg180hGxa-n0F9zHwFj8-EyI=s60"
+                    alt="avatar-drawer"
+                  />
+                </div>
               </div>
             ) : (
               <svg

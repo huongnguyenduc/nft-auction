@@ -1,14 +1,16 @@
 import React from "react";
 import Router from "next/router";
+import Image from "next/image";
 
 const Collectibles = () => {
   return (
     <>
-      <div className="w-full h-[220px]">
-        <img
+      <div className="w-full h-[220px] relative">
+        <Image
+          layout="fill"
+          objectFit="cover"
           src="https://lh3.googleusercontent.com/l8oHCZk1C7EsY4Up-84SzLRwBGrRCDh7Z5k8WDnWIU1749AFyGY-ULYvZ952vKUhOydLrbdZHwjr50ARrqE2kYPEMqwHhg72d1JthQ=s2500"
           alt="collectibles-banner"
-          className="object-cover w-full h-full"
         />
       </div>
       <div className="text-center w-full mt-6 text-[40px] font-semibold">
@@ -21,8 +23,10 @@ const Collectibles = () => {
               onClick={() => Router.push("/collections/1")}
               className="w-full border hover:shadow-lg pb-[22px] cursor-pointer"
             >
-              <div className="h-[199px] w-full">
-                <img
+              <div className="h-[199px] w-full relative">
+                <Image
+                  layout="fill"
+                  objectFit="cover"
                   src="https://lh3.googleusercontent.com/qU32LVN6jUy-ObRFSh8L1ku1tMmcIX5q_WJ3jKuZuSobuBhAOOlP2jizKj9tot52c9P7D-9Aar-TyYDqv_aFeFHOzibbRcC86o32XA=h200"
                   alt="collection-banner"
                   className="object-cover w-full h-full"
@@ -31,11 +35,14 @@ const Collectibles = () => {
               <div className="mt-[-36px] w-full relative p-[10px]">
                 <div className="flex justify-center">
                   <div className="flex justify-center items-center w-[50px] h-[50px] rounded-[50px] bg-white border">
-                    <img
-                      src="https://lh3.googleusercontent.com/BX7cWHwWFzo6FVh-Ql_qzFbXtADQgLLlpLOl3l9tS6hUPlgtGHgHn_E1FxiHXmzNlvig00ZEAk9uZU-tMPT2Fg=s100"
-                      alt="collection-avatar"
-                      className="h-[44px] w-[44px] rounded-[44px]"
-                    />
+                    <div className="h-[44px] w-[44px] rounded-[44px] relative overflow-hidden">
+                      <Image
+                        layout="fill"
+                        objectFit="cover"
+                        src="https://lh3.googleusercontent.com/BX7cWHwWFzo6FVh-Ql_qzFbXtADQgLLlpLOl3l9tS6hUPlgtGHgHn_E1FxiHXmzNlvig00ZEAk9uZU-tMPT2Fg=s100"
+                        alt="collection-avatar"
+                      />
+                    </div>
                   </div>
                 </div>
                 <p className="mt-8 w-full text-center font-semibold text-base">

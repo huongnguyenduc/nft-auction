@@ -8,6 +8,8 @@ import { ethers } from "ethers";
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
 const CreateCollection = () => {
+  const avatarFileInput = React.useRef();
+  const bannerFileInput = React.useRef();
   const [collectionForm, setCollectionForm] = React.useState({
     logoImage: "",
     logoImageURL: "",
@@ -15,8 +17,9 @@ const CreateCollection = () => {
     bannerImageURL: "",
     name: "",
     description: "",
-    type: "",
+    type: "erc721",
   });
+
   function selectedAvatarFile(event) {
     if (event.target.files[0]) {
       setCollectionForm((prevData) => ({
@@ -35,8 +38,6 @@ const CreateCollection = () => {
       }));
     }
   }
-  const avatarFileInput = React.useRef();
-  const bannerFileInput = React.useRef();
   async function createCollection() {
     const web3Modal = new Web3Modal();
     const connection = await web3Modal.connect();

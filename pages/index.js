@@ -1,5 +1,6 @@
 import React from "react";
 import Router from "next/router";
+import Image from "next/image";
 
 const index = () => {
   return (
@@ -30,11 +31,14 @@ const index = () => {
             </div>
           </div>
           <div className="flex-1 w-full max-w-[550px] max-h-[419px] shadow-xl hover:shadow-2xl overflow-hidden flex items-end transition ease-in bg-white rounded-lg">
-            <img
-              src="https://lh3.googleusercontent.com/bXQ7PUJ2k_dzuIQMFrfiKJ0wKjGDeWm2EPDuNXqLiW6z9ZY5HnDagZl3Lhufv8rop_G9B9O7Pb7nqrj0gdyPXTH-=s550"
-              alt="home-image"
-              className="mb-[-64px]"
-            />
+            <div className="mb-[-64px]">
+              <Image
+                width={550}
+                height={550}
+                src="https://lh3.googleusercontent.com/bXQ7PUJ2k_dzuIQMFrfiKJ0wKjGDeWm2EPDuNXqLiW6z9ZY5HnDagZl3Lhufv8rop_G9B9O7Pb7nqrj0gdyPXTH-=s550"
+                alt="home-image"
+              />
+            </div>
           </div>
         </div>
       </div>

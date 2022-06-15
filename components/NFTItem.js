@@ -10,8 +10,13 @@ const NFTItem = ({ nft }) => {
       onClick={() => Router.push(`/detail?id=${nft.tokenId}`)}
       className="flex flex-col border cursor-pointer shadow rounded-xl overflow-hidden bg-white transition ease-out hover:shadow-lg aspect-[3/4]"
     >
-      <div className="flex h-full items-center">
-        <img src={nft?.image} className="rounded object-contain w-full" />
+      <div className="flex h-full items-center relative rounded w-full">
+        <Image
+          layout="fill"
+          objectFit="contain"
+          src={nft?.image}
+          alt={nft?.name}
+        />
       </div>
       <div className="p-3">
         <div className="flex justify-between">

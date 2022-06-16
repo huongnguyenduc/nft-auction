@@ -14,7 +14,7 @@ async function refreshAccessToken(token) {
         refreshToken: token.refreshToken,
       },
       headers: {
-        x_authorization: token.accessToken,
+        x_authorization: `${token.accessToken}`,
       },
     });
 
@@ -23,13 +23,13 @@ async function refreshAccessToken(token) {
     if (!response.ok) {
       throw refreshedTokens;
     }
-
+    const { data: user } = refreshedTokens;
     return {
       ...token,
-      accessToken: refreshedTokens.token,
-      accessTokenExpires: Date.now() + refreshedTokens.expiresAt,
-      refreshToken: refreshedTokens.user.refreshToken ?? token.refreshToken, // Fall back to old refresh token
-      user: refreshedTokens.user,
+      accessToken: user.token,
+      accessTokenExpires: Date.now() + user.expiresAt,
+      refreshToken: user.user.refreshToken ?? token.refreshToken, // Fall back to old refresh token
+      user: user.user,
     };
   } catch (error) {
     console.log("Cant refresh token", error);
@@ -109,12 +109,12 @@ export default NextAuth({
           ...token,
           accessToken: user.token,
           refreshToken: user.user.refreshToken,
-          accessTokenExpires: Date.now() + user.expiresAt,
+          accessTokenExpires: Date.now() + parseInt(user.expiresAt.toString()),
           user: user.user,
         };
       }
 
-      if (Date.now() < token.accessTokenExpires) {
+      if (Date.now() < parseInt(token.accessTokenExpires.toString())) {
         return token;
       }
 

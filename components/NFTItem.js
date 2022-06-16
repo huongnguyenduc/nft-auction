@@ -22,7 +22,7 @@ const NFTItem = ({ nft }) => {
         <div className="flex justify-between">
           <div>
             <p className="text-xs font-base pr-1 text-gray-500">
-              {nft?.isMultiToken ? "UITToken1155" : "UITToken721"}
+              {nft?.isMultiToken ? "ERC1155" : "ERC721"}
             </p>
             <p className="text-xs font-semibold mt-0">{nft?.name}</p>
           </div>

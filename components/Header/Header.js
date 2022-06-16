@@ -25,6 +25,7 @@ import NumberFormat from "react-number-format";
 import { Tooltip, Whisper } from "rsuite";
 import { getName, getImage } from "../../utils/web3";
 import { getSession } from "next-auth/react";
+import SearchBar from "./SearchBar/SearchBar";
 
 function Header() {
   const router = useRouter();
@@ -60,8 +61,8 @@ function Header() {
   useEffect(() => {
     async function getUser() {
       const session = await getSession();
-      console.log("session", session);
-      setUserData(session.user);
+      console.log("session nav", session);
+      setUserData(session?.user ? session?.user : {});
     }
     getUser();
   }, [account]);
@@ -495,6 +496,7 @@ function Header() {
           </div>
         </Link>
         <div className="flex items-center">
+          <SearchBar />
           <p
             ref={hoverExploreRef}
             onClick={() => Router.push("/collectibles")}

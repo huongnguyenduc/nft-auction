@@ -21,7 +21,8 @@ function MyApp({ Component, pageProps }) {
         </Head>
 
         <Header />
-        <div className="py-16 min-h-[calc(100vh-52px)]">
+        <div className="h-16 w-full" />
+        <div className="min-h-[calc(100vh-52px)]">
           <Component {...pageProps} />
         </div>
 

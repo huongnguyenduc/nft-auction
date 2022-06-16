@@ -6,18 +6,34 @@ import { axiosFetcher } from "../utils/fetcher";
 import LoadingPage from "../components/Loading";
 import useSWRInfinite from "swr/infinite";
 import NFTItemSkeleton from "../components/NFTItemSkeleton";
+import Router, { useRouter } from "next/router";
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 8;
 
 export default function Home() {
+  const router = useRouter();
+  const { query } = router.query;
+  const [isBuying, setIsBuying] = useState(true);
+  const [isOnAuction, setIsOnAuction] = useState(true);
+  const auctionQuery = isOnAuction ? "&bidded=false" : "&bidded=true";
+  const buyQuery = isBuying ? "&sold=false" : "&sold=true";
   const { data, error, size, setSize } = useSWRInfinite(
-    (index) => [`nft/listing?pageNumber=${index + 1}&pageSize=${PAGE_SIZE}`],
+    (index) => [
+      `nft?pageNumber=${
+        index + 1
+      }&pageSize=${PAGE_SIZE}${auctionQuery}${buyQuery}${
+        query ? "&name=" + query : ""
+      }`,
+    ],
     axiosFetcher
   );
-  console.log(data, "data");
-  const nfts = data
-    ? [].concat(...data?.map((response) => response?.data))
-    : [];
+
+  const nfts =
+    !isBuying && !isOnAuction
+      ? []
+      : data
+      ? [].concat(...data?.map((response) => response?.data))
+      : [];
   const isLoadingInitialData = !data && !error;
   const isLoadingMore =
     isLoadingInitialData ||
@@ -45,9 +61,6 @@ export default function Home() {
   const reachEndCallback = useCallback(() => {
     reachEnd();
   }, [hasNoMore]);
-  if (isLoadingInitialData) return <LoadingPage />;
-  if (isEmpty)
-    return <h1 className="px-20 py-10 text-3xl">No items in marketplace</h1>;
   return (
     <>
       <div className="sticky z-[1050] w-full px-8 border-b top-[72px] bg-white h-[65px] flex justify-between items-center">
@@ -126,54 +139,90 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <div className="flex justify-center">
+      <div className="flex justify-center h-full">
         <div className="flex w-full px-8">
           <div
-            className={`w-[180px] lg:w-[240px] xl:w-[300px] pt-2 pr-4 mr-4 border-r sticky top-[137px] h-[70vh] ${
+            className={`w-[180px] lg:w-[240px] xl:w-[300px] pt-4 pr-4 mr-4 border-r sticky top-[137px] h-[calc(100vh-72px-65px-52px)] ${
               isOpenFilter ? "" : "hidden"
             }`}
           >
             <p className="text-base font-semibold px-2 py-4">Status</p>
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between items-center h-[48px] hover:bg-gray-100 rounded-xl px-2 py-4 cursor-pointer">
+              <div
+                onClick={() => setIsOnAuction((prevState) => !prevState)}
+                className="flex justify-between items-center h-[48px] hover:bg-gray-100 rounded-xl px-2 py-4 cursor-pointer"
+              >
                 <p className="text-base text-gray-600 font-base">Buy Now</p>
-                <input type="checkbox" className="h-6 w-6 cursor-pointer" />
+                <input
+                  type="checkbox"
+                  className="h-6 w-6 cursor-pointer rounded-md"
+                  checked={!isOnAuction}
+                />
               </div>
-              <div className="flex justify-between items-center h-[48px] hover:bg-gray-100 rounded-xl px-2 py-4 cursor-pointer">
+              <div
+                onClick={() => setIsBuying((prevState) => !prevState)}
+                className="flex justify-between items-center h-[48px] hover:bg-gray-100 rounded-xl px-2 py-4 cursor-pointer"
+              >
                 <p className="text-base text-gray-600 font-base">On Auction</p>
-                <input type="checkbox" className="h-6 w-6 cursor-pointer" />
+                <input
+                  type="checkbox"
+                  className="h-6 w-6 cursor-pointer rounded-md"
+                  checked={!isBuying}
+                />
               </div>
             </div>
           </div>
-          <div
-            className={`grid gap-4 flex-1 py-12 ${
-              isMoreGrid
-                ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-                : " grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-            }`}
-          >
-            {nfts && nfts.length > 0 ? (
-              nfts.map((nft, i) => (
-                <NFTItem nft={nft} key={nft?.toString() + i.toString()} />
-              ))
-            ) : (
-              <></>
-            )}
-            {hasNoMore ? (
-              <></>
-            ) : isLoadingMore ? (
-              <>
-                <NFTItemSkeleton />
-                <NFTItemSkeleton />
-                <NFTItemSkeleton />
-                <NFTItemSkeleton />
-                <NFTItemSkeleton />
-                <NFTItemSkeleton />
-              </>
-            ) : (
-              <></>
-            )}
-          </div>
+          {isLoadingInitialData ? (
+            <div className="w-full flex-1 flex justify-center items-center overflow-hidden py-12">
+              <LoadingPage />
+            </div>
+          ) : isEmpty || (nfts && nfts.length === 0) ? (
+            <div className="w-full flex-1 h-[60vh] flex flex-col gap-4 justify-center items-center py-12">
+              <p className="text-xl md:text-2xl text-gray-600 items-center">
+                No items found for this search
+              </p>
+              <button
+                onClick={() => {
+                  setIsBuying(true);
+                  setIsOnAuction(true);
+                  Router.push("/assets");
+                }}
+                className="font-semibold text-base mt-4 bg-blue-500 hover:bg-blue-400 text-white rounded-xl py-4 px-6"
+              >
+                Back to all items
+              </button>
+            </div>
+          ) : (
+            <div
+              className={`grid gap-4 flex-1 py-12 ${
+                isMoreGrid
+                  ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                  : " grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              }`}
+            >
+              {nfts && nfts.length > 0 ? (
+                nfts.map((nft, i) => (
+                  <NFTItem nft={nft} key={nft?.toString() + i.toString()} />
+                ))
+              ) : (
+                <></>
+              )}
+              {hasNoMore ? (
+                <></>
+              ) : isLoadingMore ? (
+                <>
+                  <NFTItemSkeleton />
+                  <NFTItemSkeleton />
+                  <NFTItemSkeleton />
+                  <NFTItemSkeleton />
+                  <NFTItemSkeleton />
+                  <NFTItemSkeleton />
+                </>
+              ) : (
+                <></>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </>

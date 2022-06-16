@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getShortAddress } from "../utils/utils";
-import { useWeb3React } from "@web3-react/core";
 import Router from "next/router";
 import NFTItem from "../components/NFTItem";
 import { getSession } from "next-auth/react";
+import { useWeb3React } from "@web3-react/core";
 import ApiClient from "../utils/ApiClient";
 
 export default function MyAssets() {
@@ -14,46 +14,58 @@ export default function MyAssets() {
     async function getUser() {
       const session = await getSession();
       console.log("session", session);
-      setUserData(session.user);
+      if (session) {
+        setUserData(session?.user);
+      }
     }
     if (!isActive) {
       Router.push(`/login?referrer=account`);
     } else {
-      loadNFTs();
-      getUser();
+      if (userAccount) {
+        loadNFTs();
+        getUser();
+      }
     }
   }, [isActive]);
   const [nfts, setNfts] = useState([]);
   const [tabState, setTabState] = useState("collected");
   useEffect(() => {
-    loadNFTs();
-    setTabState("collected");
+    if (userAccount) {
+      loadNFTs();
+      setTabState("collected");
+    }
   }, [userAccount]);
   async function loadNFTs() {
-    const myNFTsResponse = await ApiClient(userAccount).get(`/user/nfts`);
-    setNfts(myNFTsResponse?.data?.data ? myNFTsResponse?.data?.data : []);
+    if (userAccount) {
+      const myNFTsResponse = await ApiClient(userAccount).get(`/user/nfts`);
+      setNfts(myNFTsResponse?.data?.data ? myNFTsResponse?.data?.data : []);
+    }
   }
 
   const [listedNfts, setListedNfts] = useState([]);
 
   async function loadListedNFTs() {
-    const listingNFTsResponse = await ApiClient(userAccount).get(
-      `/user/listing-nfts`
-    );
-    setListedNfts(
-      listingNFTsResponse?.data?.data ? listingNFTsResponse?.data?.data : []
-    );
+    if (userAccount) {
+      const listingNFTsResponse = await ApiClient(userAccount).get(
+        `/user/listing-nfts`
+      );
+      setListedNfts(
+        listingNFTsResponse?.data?.data ? listingNFTsResponse?.data?.data : []
+      );
+    }
   }
 
   const [biddingNfts, setBiddingNfts] = useState([]);
 
   async function loadBiddingNFTs() {
-    const bidNFTsResponse = await ApiClient(userAccount).get(
-      `/user/bidding-nfts`
-    );
-    setBiddingNfts(
-      bidNFTsResponse?.data?.data ? bidNFTsResponse?.data?.data : []
-    );
+    if (userAccount) {
+      const bidNFTsResponse = await ApiClient(userAccount).get(
+        `/user/bidding-nfts`
+      );
+      setBiddingNfts(
+        bidNFTsResponse?.data?.data ? bidNFTsResponse?.data?.data : []
+      );
+    }
   }
 
   return (

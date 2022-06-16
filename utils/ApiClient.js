@@ -33,16 +33,16 @@ async function login(account) {
     });
     if (res !== undefined) {
       const { error, url } = res;
-      console.log("res", res);
+      console.log("res login api client", res);
       if (error) {
-        console.log("error", error);
+        console.log("error login api client", error);
       }
       if (url) {
-        console.log("url", url);
+        console.log("url login api client", url);
       }
     }
   } catch (e) {
-    console.log("error login", e);
+    console.log("error login api client", e);
   }
 }
 
@@ -60,23 +60,33 @@ const ApiClient = (account) => {
   const instance = axios.create(defaultOptions);
 
   instance.interceptors.request.use(async (request) => {
-    const session = await getSession(request);
-    console.log("session request", session);
-    if (
-      session &&
-      session?.user?.wallet === account &&
-      !(session?.error === "RefreshAccessTokenError")
-    ) {
-      console.log("login okie", session);
-      request.headers.x_authorization = session?.accessToken;
-    } else {
-      // if (session) {
-      //   await signOut();
-      // }
-      await login(account);
-      const newSession = await getSession(request);
-      console.log("newSession", newSession);
-      request.headers.x_authorization = `${newSession?.accessToken}`;
+    try {
+      const session = await getSession(request);
+      console.log("session request api client", session);
+      if (
+        session &&
+        session?.user?.wallet === account &&
+        !(session?.error === "RefreshAccessTokenError")
+      ) {
+        console.log("login okie", session);
+        request.headers.x_authorization = session?.accessToken;
+      } else {
+        // if (session) {
+        //   await signOut();
+        // }
+        console.log("login ko okie", session);
+        console.log("address", account);
+        console.log("1", !!session);
+        console.log("2", !!session?.user?.wallet === account);
+        console.log("3", !!!(session?.error === "RefreshAccessTokenError"));
+        await login(account);
+        const newSession = await getSession(request);
+        console.log("newSession api client", newSession);
+        request.headers.x_authorization = `${newSession?.accessToken}`;
+      }
+    } catch (e) {
+      console.log("error interceptor", e);
+      return request;
     }
     return request;
   });
@@ -120,3 +130,9 @@ const ApiClient = (account) => {
 };
 
 export default ApiClient;
+
+export function apiClientFetcher(endpoint, account) {
+  return ApiClient(account)
+    .get(endpoint)
+    .then((res) => res.data);
+}

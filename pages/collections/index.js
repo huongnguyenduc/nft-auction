@@ -6,11 +6,12 @@ import { axiosFetcher } from "../../utils/fetcher";
 import LoadingPage from "../../components/Loading";
 import useSWRInfinite from "swr/infinite";
 import CollectionItem from "../../components/CollectionItem";
+import CollectionItemSkeleton from "../../components/CollectionItemSkeleton";
 
 const PAGE_SIZE = 6;
 
 const Collections = () => {
-  const { isActive, account: userAccount } = useWeb3React();
+  const { account: userAccount } = useWeb3React();
   const { data, error, size, setSize } = useSWRInfinite(
     userAccount
       ? (index) => [
@@ -24,8 +25,6 @@ const Collections = () => {
   const collections = data
     ? [].concat(...data?.map((response) => response?.data))
     : [];
-  console.log("cellection", collections);
-  console.log("daa", data);
   const isLoadingInitialData = !data && !error;
   const isLoadingMore =
     isLoadingInitialData ||
@@ -50,7 +49,6 @@ const Collections = () => {
   const reachEndCallback = useCallback(() => {
     reachEnd();
   }, [hasNoMore]);
-  if (isLoadingInitialData) return <LoadingPage />;
   return (
     <div className="flex justify-center">
       <div className="w-5/6 flex flex-col py-12">
@@ -65,20 +63,46 @@ const Collections = () => {
         >
           Create a collection
         </button>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
-          {collections && collections.length > 0 ? (
-            collections.map((collection) => (
-              <CollectionItem
-                key={collection?.address}
-                collection={collection}
-                account={userAccount}
-                canEdit
-              />
-            ))
-          ) : (
-            <></>
-          )}
-        </div>
+        {isLoadingInitialData ? (
+          <div className="w-full flex-1 flex justify-center items-center overflow-hidden py-12">
+            <LoadingPage />
+          </div>
+        ) : isEmpty || (collections && collections.length === 0) ? (
+          <div className="w-full flex-1 h-[60vh] flex flex-col gap-4 justify-center items-center py-12">
+            <p className="text-xl md:text-2xl text-gray-600 items-center">
+              No items to display
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
+            {collections && collections.length > 0 ? (
+              collections.map((collection) => (
+                <CollectionItem
+                  key={collection?.address}
+                  collection={collection}
+                  account={userAccount}
+                  canEdit
+                />
+              ))
+            ) : (
+              <></>
+            )}
+            {hasNoMore ? (
+              <></>
+            ) : isLoadingMore ? (
+              <>
+                <CollectionItemSkeleton />
+                <CollectionItemSkeleton />
+                <CollectionItemSkeleton />
+                <CollectionItemSkeleton />
+                <CollectionItemSkeleton />
+                <CollectionItemSkeleton />
+              </>
+            ) : (
+              <></>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

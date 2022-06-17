@@ -5,7 +5,8 @@ import { getShortAddress } from "../utils/utils";
 import useHover from "./CustomHook/useHover";
 
 const CollectionItem = ({ collection, account, canEdit }) => {
-  const { name, address, description, image, banner, owner } = collection;
+  const { name, address, description, image, banner, owner, ownerName } =
+    collection;
   const [hoverCollectionRef, isHoveredCollection] = useHover();
   return (
     <div
@@ -67,7 +68,11 @@ const CollectionItem = ({ collection, account, canEdit }) => {
           <div className="flex gap-1 items-center">
             <p className="font-medium text-sm">by </p>
             <p className="font-medium text-sm text-blue-400 mt-0">
-              {getShortAddress(owner, account)}
+              {getShortAddress(owner, account) === "you"
+                ? "you"
+                : ownerName === "anonymous"
+                ? getShortAddress(owner, account)
+                : ownerName}
             </p>
           </div>
         </div>

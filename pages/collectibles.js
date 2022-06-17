@@ -5,6 +5,7 @@ import LoadingPage from "../components/Loading";
 import useSWRInfinite from "swr/infinite";
 import CollectionItem from "../components/CollectionItem";
 import { useWeb3React } from "@web3-react/core";
+import CollectionItemSkeleton from "../components/CollectionItemSkeleton";
 
 const PAGE_SIZE = 6;
 
@@ -42,7 +43,6 @@ const Collectibles = () => {
   const reachEndCallback = useCallback(() => {
     reachEnd();
   }, [hasNoMore]);
-  if (isLoadingInitialData) return <LoadingPage />;
   return (
     <>
       <div className="w-full h-[220px] relative">
@@ -58,19 +58,45 @@ const Collectibles = () => {
       </div>
       <div className="flex justify-center w-full">
         <div className="py-12 max-w-[1600px] w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-4 px-8">
-            {collections && collections.length > 0 ? (
-              collections.map((collection) => (
-                <CollectionItem
-                  key={collection.address}
-                  collection={collection}
-                  account={account}
-                />
-              ))
-            ) : (
-              <></>
-            )}
-          </div>
+          {isLoadingInitialData ? (
+            <div className="w-full flex-1 flex justify-center items-center overflow-hidden py-12">
+              <LoadingPage />
+            </div>
+          ) : isEmpty || (collections && collections.length === 0) ? (
+            <div className="w-full flex-1 h-[60vh] flex flex-col gap-4 justify-center items-center py-12">
+              <p className="text-xl md:text-2xl text-gray-600 items-center">
+                No items to display
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-4 px-8">
+              {collections && collections.length > 0 ? (
+                collections.map((collection) => (
+                  <CollectionItem
+                    key={collection.address}
+                    collection={collection}
+                    account={account}
+                  />
+                ))
+              ) : (
+                <></>
+              )}
+              {hasNoMore ? (
+                <></>
+              ) : isLoadingMore ? (
+                <>
+                  <CollectionItemSkeleton />
+                  <CollectionItemSkeleton />
+                  <CollectionItemSkeleton />
+                  <CollectionItemSkeleton />
+                  <CollectionItemSkeleton />
+                  <CollectionItemSkeleton />
+                </>
+              ) : (
+                <></>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </>

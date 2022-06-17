@@ -5,6 +5,7 @@ import LoadingPage from "../../components/Loading";
 import useSWRInfinite from "swr/infinite";
 import NFTItem from "../../components/NFTItem";
 import Image from "next/image";
+import NFTItemSkeleton from "../../components/NFTItemSkeleton";
 
 const PAGE_SIZE = 6;
 
@@ -15,11 +16,12 @@ const Collection = () => {
   useEffect(() => {
     async function getCollection() {
       const collectionResponse = await axiosFetcher(`collection/${address}`);
-      console.log("aaa", collectionResponse);
       setCollection(collectionResponse.data);
     }
-    getCollection();
-  }, []);
+    if (address) {
+      getCollection();
+    }
+  }, [address]);
   const { data, error, size, setSize } = useSWRInfinite(
     (index) => [
       `collection/${address}/nfts?pageNumber=${
@@ -28,7 +30,7 @@ const Collection = () => {
     ],
     axiosFetcher
   );
-  console.log(data, "data");
+
   const nfts = data
     ? [].concat(...data?.map((response) => response?.data))
     : [];
@@ -56,7 +58,6 @@ const Collection = () => {
   const reachEndCallback = useCallback(() => {
     reachEnd();
   }, [hasNoMore]);
-  if (isLoadingInitialData) return <LoadingPage />;
   return (
     <div className="flex flex-col items-center">
       <div
@@ -70,7 +71,7 @@ const Collection = () => {
             alt="collection-banner"
           />
         ) : (
-          <></>
+          <div className="w-full h-full bg-slate-400 animate-pulse"></div>
         )}
         <div className="w-[180px] h-[180px] rounded-lg absolute bottom-[-30px] left-8 bg-white shadow flex justify-center items-center">
           <div className="w-[168px] h-[168px] rounded-lg bg-gray-400 relative overflow-hidden">
@@ -82,7 +83,7 @@ const Collection = () => {
                 alt="collection-avatar"
               />
             ) : (
-              <></>
+              <div className="w-full h-full bg-slate-400 animate-pulse"></div>
             )}
           </div>
         </div>
@@ -95,13 +96,41 @@ const Collection = () => {
         <p className="text-base">{collection?.description}</p>
         <div className="flex justify-center w-full mt-4">
           <div className="flex w-full">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-8 w-full">
-              {nfts && nfts.length > 0 ? (
-                nfts.map((nft, i) => <NFTItem key={nft.image + i} nft={nft} />)
-              ) : (
-                <></>
-              )}
-            </div>
+            {isLoadingInitialData ? (
+              <div className="w-full flex-1 flex justify-center items-center overflow-hidden py-12">
+                <LoadingPage />
+              </div>
+            ) : isEmpty || (nfts && nfts.length === 0) ? (
+              <div className="w-full flex-1 h-[60vh] flex flex-col gap-4 justify-center items-center py-12">
+                <p className="text-xl md:text-2xl text-gray-600 items-center">
+                  No items to display
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-8 w-full">
+                {nfts && nfts.length > 0 ? (
+                  nfts.map((nft, i) => (
+                    <NFTItem key={nft.image + i} nft={nft} />
+                  ))
+                ) : (
+                  <></>
+                )}
+                {hasNoMore ? (
+                  <></>
+                ) : isLoadingMore ? (
+                  <>
+                    <NFTItemSkeleton />
+                    <NFTItemSkeleton />
+                    <NFTItemSkeleton />
+                    <NFTItemSkeleton />
+                    <NFTItemSkeleton />
+                    <NFTItemSkeleton />
+                  </>
+                ) : (
+                  <></>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

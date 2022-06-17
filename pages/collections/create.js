@@ -14,8 +14,6 @@ import NotificationUI from "../../components/Notification";
 import { useToaster } from "rsuite";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
-const verifySignatureContractAddress =
-  process.env.NEXT_PUBLIC_VERIFY_SIGNATURE_CONTRACT_ADDRESS;
 
 const CreateCollection = () => {
   const { isActive, account } = useWeb3React();
@@ -307,7 +305,7 @@ const CreateCollection = () => {
                 description: e.target.value,
               }));
             }}
-            className="mt-2 border-2 rounded-lg p-3 w-full focus:shadow-lg focus-visible:outline-none"
+            className="mt-2 border-2 border-gray-200 focus:border-gray-200 focus:ring-gray-200 rounded-lg p-3 w-full focus:shadow-lg focus-visible:outline-none"
           />
         </div>
         <div className="mt-6">
@@ -325,7 +323,7 @@ const CreateCollection = () => {
                 type: e.target.value,
               }))
             }
-            className="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 focus:shadow-lg focus-visible:outline-none"
+            className="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 focus:shadow-lg focus-visible:outline-none border-gray-200 focus:border-gray-200 focus:ring-gray-200"
           >
             <option defaultValue value="erc721">
               ERC721

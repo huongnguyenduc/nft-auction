@@ -147,7 +147,7 @@ const EditCollection = () => {
   return (
     <div className="flex justify-center">
       <div className="w-2/3 flex flex-col py-12">
-        <p className="text-4xl font-semibold mb-6">Edit a Collection</p>
+        <p className="text-4xl font-semibold mb-6">Edit Collection</p>
         <div className="w-full flex-none text-xs font-medium text-slate-600 mt-2">
           <span className="text-red-600">*</span> Required field
         </div>
@@ -318,7 +318,7 @@ const EditCollection = () => {
               }));
             }}
             value={collectionForm.description}
-            className="mt-2 border-2 rounded-lg p-3 w-full focus:shadow-lg focus-visible:outline-none"
+            className="mt-2 border-2 border-gray-200 focus:border-gray-200 focus:ring-gray-200 rounded-lg p-3 w-full focus:shadow-lg focus-visible:outline-none"
           />
         </div>
         <div className="mt-6">

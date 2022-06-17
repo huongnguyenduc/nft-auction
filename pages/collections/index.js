@@ -71,6 +71,8 @@ const Collections = () => {
               <CollectionItem
                 key={collection?.address}
                 collection={collection}
+                account={userAccount}
+                canEdit
               />
             ))
           ) : (

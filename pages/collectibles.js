@@ -1,13 +1,15 @@
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import Image from "next/image";
 import { axiosFetcher } from "../utils/fetcher";
 import LoadingPage from "../components/Loading";
 import useSWRInfinite from "swr/infinite";
 import CollectionItem from "../components/CollectionItem";
+import { useWeb3React } from "@web3-react/core";
 
 const PAGE_SIZE = 6;
 
 const Collectibles = () => {
+  const { account } = useWeb3React();
   const { data, error, size, setSize } = useSWRInfinite(
     (index) => [`collection?pageNumber=${index + 1}&pageSize=${PAGE_SIZE}`],
     axiosFetcher
@@ -62,6 +64,7 @@ const Collectibles = () => {
                 <CollectionItem
                   key={collection.address}
                   collection={collection}
+                  account={account}
                 />
               ))
             ) : (

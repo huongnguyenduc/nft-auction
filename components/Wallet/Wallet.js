@@ -12,7 +12,7 @@ import { MetaMask } from "@web3-react/metamask";
 
 export function Wallet({ connector, isActivating, isActive, error, chainId }) {
   return (
-    <div className="flex rounded-lg p-[16px] border justify-between cursor-pointer hover:shadow-lg transition-all ease-in hover:bg-blue-50/30">
+    <div className="flex rounded-lg p-[16px] border justify-between cursor-pointer hover:shadow-lg transition-all ease-in hover:bg-[#fbfdff]">
       <div className="flex gap-4">
         <Image
           src={getImage(connector)}

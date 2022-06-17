@@ -337,7 +337,7 @@ export default function ListNFT() {
                   className={`flex flex-col items-center rounded-l-sm flex-1 py-7 border transition ease-in ${
                     isCreateAuction
                       ? "cursor-pointer text-gray-400 hover:text-gray-900"
-                      : "bg-blue-50/30"
+                      : "bg-[#fbfdff]"
                   }`}
                   onClick={() => setIsCreateAuction(false)}
                 >
@@ -363,7 +363,7 @@ export default function ListNFT() {
                   onClick={() => setIsCreateAuction(true)}
                   className={`flex flex-col items-center rounded-l-sm flex-1 py-7 border transition ease-in ${
                     isCreateAuction
-                      ? "bg-blue-50/30"
+                      ? "bg-[#fbfdff]"
                       : "cursor-pointer text-gray-400 hover:text-gray-900"
                   }`}
                 >
@@ -501,8 +501,14 @@ export default function ListNFT() {
             </div>
             <div className="flex-1">
               <p className="text-xl font-medium">Preview</p>
-              <div className="border shadow rounded-xl overflow-hidden transition ease-out hover:shadow-lg hover:-translate-y-0.5 w-fit">
-                <img src={image} />
+              <div className="border relative shadow rounded-xl overflow-hidden transition ease-out hover:shadow-lg hover:-translate-y-0.5 w-fit">
+                <Image
+                  src={image}
+                  alt="nft-preview-image"
+                  width={350}
+                  height={350}
+                  objectFit="cover"
+                />
                 <div className="p-4">
                   <div className="flex justify-between">
                     <p className="text-md font-semibold">{name}</p>

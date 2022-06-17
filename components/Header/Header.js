@@ -311,7 +311,7 @@ function Header() {
       >
         <div
           onClick={() => goToPage("/account")}
-          className="flex gap-4 p-4 items-center border-b hover:bg-blue-50/30 hover:shadow cursor-pointer"
+          className="flex gap-4 p-4 items-center border-b hover:bg-[#fbfdff] hover:shadow cursor-pointer"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -329,7 +329,7 @@ function Header() {
         </div>
         <div
           onClick={() => goToPage("/setting")}
-          className="flex gap-4 p-4 items-center hover:bg-blue-50/30 hover:shadow cursor-pointer"
+          className="flex gap-4 p-4 items-center hover:bg-[#fbfdff] hover:shadow cursor-pointer"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -347,7 +347,7 @@ function Header() {
         </div>
         <div
           onClick={() => goToPage("/collections")}
-          className="flex gap-4 p-4 items-center hover:bg-blue-50/30 hover:shadow cursor-pointer"
+          className="flex gap-4 p-4 items-center hover:bg-[#fbfdff] hover:shadow cursor-pointer"
         >
           <svg
             className="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium MuiSvgIcon-root MuiSvgIcon-fontSizeLarge css-1shn170"
@@ -375,7 +375,7 @@ function Header() {
       >
         <div
           onClick={() => Router.push("/assets")}
-          className="flex gap-4 p-4 items-center border-b hover:bg-blue-50/30 hover:shadow cursor-pointer"
+          className="flex gap-4 p-4 items-center border-b hover:bg-[#fbfdff] hover:shadow cursor-pointer"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -426,7 +426,7 @@ function Header() {
         </div>
         <div
           onClick={() => Router.push("/collectibles")}
-          className="flex gap-4 p-4 items-center hover:bg-blue-50/30 hover:shadow cursor-pointer"
+          className="flex gap-4 p-4 items-center hover:bg-[#fbfdff] hover:shadow cursor-pointer"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

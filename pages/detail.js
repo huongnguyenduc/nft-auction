@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/router";
+import Router, { useRouter } from "next/router";
 import Image from "next/image";
 import { ethers } from "ethers";
 import NFTMarketplace from "../contracts/NFTMarketplace.json";
@@ -92,9 +92,15 @@ function NFTDetail() {
   );
   const [validateBidError, setValidateBidError] = useState("");
 
+  const [collectionData, setCollectionData] = useState({});
+
   async function fetchNFT() {
     const detailResponse = await axiosFetcher(`nft/id/${id}`);
     setNftData(detailResponse.data ? detailResponse.data : initialNFT);
+    const collectionResponse = await axiosFetcher(
+      `collection/${detailResponse?.data?.collectionAddress}`
+    );
+    setCollectionData(collectionResponse?.data ? collectionResponse?.data : {});
   }
 
   useEffect(() => {
@@ -302,7 +308,7 @@ function NFTDetail() {
         <Modal.Body>
           <p className="text-lg font-semibold mb-4 mt-4">Price</p>
           <div className="flex mb-4 items-center">
-            <div className="bg-blue-50/30 flex gap-2 pr-10 pl-4 py-4 border rounded-l-md">
+            <div className="bg-[#fbfdff] flex gap-2 pr-10 pl-4 py-4 border rounded-l-md">
               <Image
                 src="https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg"
                 alt="eth-icon"
@@ -516,7 +522,7 @@ function NFTDetail() {
         </Modal.Footer>
       </Modal>
       {isOwner ? (
-        <div className="fixed bg-blue-50/30 top-[72px] w-full z-50">
+        <div className="fixed bg-[#fbfdff] top-[72px] w-full z-50">
           <div className="flex justify-center">
             <div className="w-5/6 flex py-2 justify-end">
               {nftData.sold && nftData.bidded && isOwner ? (
@@ -552,10 +558,10 @@ function NFTDetail() {
         <></>
       )}
       <div className="flex justify-center w-full">
-        <div className="w-5/6 flex flex-col pt-28">
+        <div className={`w-5/6 flex flex-col ${isOwner ? "pt-28" : "pt-12"}`}>
           <div className="md:flex gap-6">
             <div className="basis-2/5 mb-8">
-              <div className="flex flex-col items-center border shadow rounded-xl overflow-hidden w-full mb-4">
+              <div className="flex h-[550px] flex-col items-center border shadow rounded-xl overflow-hidden w-full mb-4">
                 <div className="p-4 w-full">
                   <div className="flex">
                     <Image
@@ -566,7 +572,14 @@ function NFTDetail() {
                     />
                   </div>
                 </div>
-                <img src={image} />
+                <div className="h-full w-full relative">
+                  <Image
+                    alt="image-nft"
+                    src={image}
+                    layout="fill"
+                    objectFit="cover"
+                  />
+                </div>
               </div>
               <div className="flex flex-col border shadow rounded-xl overflow-hidden w-full">
                 <div className="p-4 w-full flex">
@@ -584,10 +597,39 @@ function NFTDetail() {
                       d="M4 6h16M4 12h16M4 18h7"
                     />
                   </svg>
-                  <p className="text-md font-medium ml-3">Description</p>
+                  <p className="text-md font-semibold ml-3">Description</p>
                 </div>
-                <div className="p-4 border-t bg-blue-50/30">
-                  <p className="text-sm font-normal">{description}</p>
+                <div className="p-4 border-t bg-[#fbfdff]">
+                  <p className="text-sm font-normal">
+                    {description
+                      ? description
+                      : "This NFT has no description yet."}
+                  </p>
+                </div>
+                <div className="p-4 w-full flex">
+                  <svg
+                    className="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium MuiSvgIcon-root MuiSvgIcon-fontSizeLarge css-1shn170"
+                    focusable="false"
+                    height="24"
+                    width="24"
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    data-testid="VerticalSplitIcon"
+                    tabIndex="-1"
+                    title="VerticalSplit"
+                  >
+                    <path d="M3 15h8v-2H3v2zm0 4h8v-2H3v2zm0-8h8V9H3v2zm0-6v2h8V5H3zm10 0h8v14h-8V5z"></path>
+                  </svg>
+                  <p className="text-md font-semibold ml-3">
+                    About {collectionData?.name}
+                  </p>
+                </div>
+                <div className="p-4 border-t bg-[#fbfdff]">
+                  <p className="text-sm font-normal">
+                    {collectionData?.description
+                      ? collectionData?.description
+                      : "This collection has no description yet."}
+                  </p>
                 </div>
                 <div className="p-4 w-full flex justify-between">
                   <div className="flex">
@@ -603,7 +645,7 @@ function NFTDetail() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    <p className="text-md font-medium ml-3">Detail</p>
+                    <p className="text-md font-semibold ml-3">Detail</p>
                   </div>
                 </div>
                 <div className="p-4 border-t /30">
@@ -615,7 +657,10 @@ function NFTDetail() {
                         href={`https://rinkeby.etherscan.io/address/${nftData.nftContract}`}
                         rel="noopener noreferrer"
                       >
-                        {getShortAddress(nftData.nftContract, userAccount)}
+                        {getShortAddress(
+                          nftData.collectionAddress,
+                          userAccount
+                        )}
                       </a>
                     </p>
                   </div>
@@ -637,6 +682,14 @@ function NFTDetail() {
               </div>
             </div>
             <div className="basis-3/5">
+              <p
+                onClick={() =>
+                  Router.push(`/collections/${nftData?.collectionAddress}`)
+                }
+                className="text-base text-blue-500 hover:text-blue-600 cursor-pointer"
+              >
+                {collectionData?.name}
+              </p>
               <p className="text-3xl font-semibold mb-8">{name}</p>
               <div className="flex gap-1 mb-8">
                 <p className="text-sm font-normal text-gray-500 ">Own by </p>
@@ -688,7 +741,7 @@ function NFTDetail() {
                 {nftData.bidded && nftData.sold ? (
                   <></>
                 ) : (
-                  <div className="bg-blue-50/30 flex flex-col gap-3 p-4">
+                  <div className="bg-[#fbfdff] flex flex-col gap-3 p-4">
                     <p className=" text-gray-500">
                       {!nftData.bidded ? "Minimum bid" : "Current price"}
                     </p>
@@ -782,7 +835,7 @@ function NFTDetail() {
                         <th className="text-left font-normal p-4"></th>
                       </tr>
                     </thead>
-                    <tbody className="bg-blue-50/30">
+                    <tbody className="bg-[#fbfdff]">
                       {parseFloat(nftData?.auctionInfo?.highestBid.toString()) >
                       0 ? (
                         (nftData?.auctionInfo?.bids.length > 0

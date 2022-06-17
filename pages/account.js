@@ -150,7 +150,7 @@ export default function MyAssets() {
             </p>
           </div>
         </div>
-        <div className="flex justify-center w-full">
+        <div className="flex justify-center w-full pb-8">
           <div className="flex w-full">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 pt-4 w-full">
               {tabState === "collected" ? (

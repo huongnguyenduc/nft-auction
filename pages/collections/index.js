@@ -2,7 +2,7 @@ import React from "react";
 import Router from "next/router";
 import { useCallback, useEffect } from "react";
 import { useWeb3React } from "@web3-react/core";
-import ApiClient, { apiClientFetcher } from "../../utils/ApiClient";
+import { axiosFetcher } from "../../utils/fetcher";
 import LoadingPage from "../../components/Loading";
 import useSWRInfinite from "swr/infinite";
 import CollectionItem from "../../components/CollectionItem";
@@ -14,17 +14,18 @@ const Collections = () => {
   const { data, error, size, setSize } = useSWRInfinite(
     userAccount
       ? (index) => [
-          `/user/collections?pageNumber=${index + 1}&pageSize=${PAGE_SIZE}`,
+          `user/${userAccount}/collections?pageNumber=${
+            index + 1
+          }&pageSize=${PAGE_SIZE}`,
         ]
       : null,
-    (endpoint) =>
-      ApiClient(userAccount)
-        .get(endpoint)
-        .then((res) => res.data)
+    axiosFetcher
   );
   const collections = data
     ? [].concat(...data?.map((response) => response?.data))
     : [];
+  console.log("cellection", collections);
+  console.log("daa", data);
   const isLoadingInitialData = !data && !error;
   const isLoadingMore =
     isLoadingInitialData ||
@@ -68,7 +69,7 @@ const Collections = () => {
           {collections && collections.length > 0 ? (
             collections.map((collection) => (
               <CollectionItem
-                key={collection.address}
+                key={collection?.address}
                 collection={collection}
               />
             ))

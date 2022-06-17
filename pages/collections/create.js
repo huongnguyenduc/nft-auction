@@ -5,9 +5,11 @@ import ERC1155Contract from "../../contracts/UITToken1155.json";
 import Web3Modal from "web3modal";
 import Router from "next/router";
 import { useWeb3React } from "@web3-react/core";
-import { uploadFileToIPFS } from "../../utils/upload";
+import { uploadFileToIPFS, uploadFileToCloudinary } from "../../utils/upload";
 import ApiClient from "../../utils/ApiClient";
 import { ethers } from "ethers";
+import { useState } from "react";
+import LoadingUI from "../../components/LoadingUI";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const verifySignatureContractAddress =
@@ -59,22 +61,26 @@ const CreateCollection = () => {
   }
 
   function validateCreateCollection() {
+    let isValidated = true;
     if (!collectionForm.logoImage) {
       setCollectionFormError((error) => ({
         ...error,
         logoImageError: "Logo image is required.",
       }));
-      return false;
+      isValidated = false;
     }
     if (!collectionForm.name) {
       setCollectionFormError((error) => ({
         ...error,
         nameError: "Name is required.",
       }));
-      return false;
+      isValidated = false;
     }
-    return true;
+    return isValidated;
   }
+
+  const [createStatus, setCreateStatus] = useState("adding");
+  const [createError, setCreateError] = useState("");
 
   async function createCollection() {
     const web3Modal = new Web3Modal();
@@ -82,9 +88,14 @@ const CreateCollection = () => {
     const provider = new ethers.providers.Web3Provider(connection);
     const signer = await provider.getSigner();
     let contract;
+    setCreateStatus("creating");
     try {
-      const image = await uploadFileToIPFS(collectionForm.logoImage);
-      const banner = await uploadFileToIPFS(collectionForm.bannerImage);
+      const { url: image } = await uploadFileToCloudinary(
+        collectionForm.logoImage
+      );
+      const { url: banner } = await uploadFileToCloudinary(
+        collectionForm.bannerImage
+      );
       if (collectionForm.type === "erc1155") {
         contract = new ethers.ContractFactory(
           ERC1155Contract.abi,
@@ -116,8 +127,11 @@ const CreateCollection = () => {
           description: collectionForm.description,
         }
       );
+      setCreateStatus("created");
       console.log("create collection", createCollectionResponse);
     } catch (error) {
+      setCreateStatus("adding");
+      setCreateError(error.message);
       console.log("Unknown error: ", error);
     }
   }
@@ -269,6 +283,12 @@ const CreateCollection = () => {
           </label>
           <textarea
             id="description"
+            onChange={(e) => {
+              setCollectionForm((state) => ({
+                ...state,
+                description: e.target.value,
+              }));
+            }}
             className="mt-2 border-2 rounded-lg p-3 w-full focus:shadow-lg focus-visible:outline-none"
           />
         </div>
@@ -302,8 +322,10 @@ const CreateCollection = () => {
             }}
             className="font-bold mt-6 bg-blue-500 text-white rounded-xl py-4 px-6"
           >
+            {createStatus === "creating" ? <LoadingUI /> : <></>}
             Create
           </button>
+          <p className="text-red-500">{createError}</p>
         </div>
       </div>
     </div>

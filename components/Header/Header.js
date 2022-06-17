@@ -369,7 +369,7 @@ function Header() {
         }`}
       >
         <div
-          onClick={() => goToPage("/assets")}
+          onClick={() => Router.push("/assets")}
           className="flex gap-4 p-4 items-center border-b hover:bg-blue-50/30 hover:shadow cursor-pointer"
         >
           <svg
@@ -420,7 +420,7 @@ function Header() {
           <p className="font-medium text-base">All NFTs</p>
         </div>
         <div
-          onClick={() => goToPage("/collectibles")}
+          onClick={() => Router.push("/collectibles")}
           className="flex gap-4 p-4 items-center hover:bg-blue-50/30 hover:shadow cursor-pointer"
         >
           <svg

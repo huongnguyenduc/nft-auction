@@ -9,6 +9,7 @@ const nextConfig = {
       "static.opensea.io",
       "ipfs.infura.io",
       "lh3.googleusercontent.com",
+      "res.cloudinary.com",
       "",
     ],
   },

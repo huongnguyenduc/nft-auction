@@ -137,7 +137,7 @@ const Setting = () => {
               <p htmlFor="banner" className="font-semibold text-base mb-2">
                 Profile Banner
               </p>
-              <div className="max-w-[420px] min-h-[130px] h-[130px] rounded-xl mb-4 overflow-hidden relative">
+              <div className="max-w-[150px] min-h-[130px] h-[130px] rounded-xl mb-4 overflow-hidden relative">
                 <Image
                   layout="fill"
                   objectFit="cover"

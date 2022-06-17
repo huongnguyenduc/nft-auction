@@ -95,7 +95,7 @@ const Collection = () => {
         <p className="text-base">{collection?.description}</p>
         <div className="flex justify-center w-full mt-4">
           <div className="flex w-full">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-8 w-full">
               {nfts && nfts.length > 0 ? (
                 nfts.map((nft, i) => <NFTItem key={nft.image + i} nft={nft} />)
               ) : (

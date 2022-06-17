@@ -3,19 +3,17 @@ import Image from "next/image";
 import { getShortAddress } from "../utils/utils";
 import Router from "next/router";
 import NFTItem from "../components/NFTItem";
-import { getSession } from "next-auth/react";
 import { useWeb3React } from "@web3-react/core";
-import ApiClient from "../utils/ApiClient";
+import { axiosFetcher } from "../utils/fetcher";
 
 export default function MyAssets() {
   const [userData, setUserData] = useState();
   const { isActive, account: userAccount } = useWeb3React();
   useEffect(() => {
     async function getUser() {
-      const session = await getSession();
-      console.log("session", session);
-      if (session) {
-        setUserData(session?.user);
+      const userData = await axiosFetcher(`user/${userAccount}`);
+      if (userData?.data) {
+        setUserData(userData.data);
       }
     }
     if (!isActive) {
@@ -37,8 +35,8 @@ export default function MyAssets() {
   }, [userAccount]);
   async function loadNFTs() {
     if (userAccount) {
-      const myNFTsResponse = await ApiClient(userAccount).get(`/user/nfts`);
-      setNfts(myNFTsResponse?.data?.data ? myNFTsResponse?.data?.data : []);
+      const myNFTsResponse = await axiosFetcher(`user/${userAccount}/nfts`);
+      setNfts(myNFTsResponse?.data ? myNFTsResponse?.data : []);
     }
   }
 
@@ -46,12 +44,10 @@ export default function MyAssets() {
 
   async function loadListedNFTs() {
     if (userAccount) {
-      const listingNFTsResponse = await ApiClient(userAccount).get(
-        `/user/listing-nfts`
+      const listingNFTsResponse = await axiosFetcher(
+        `user/${userAccount}/listing-nfts`
       );
-      setListedNfts(
-        listingNFTsResponse?.data?.data ? listingNFTsResponse?.data?.data : []
-      );
+      setListedNfts(listingNFTsResponse?.data ? listingNFTsResponse?.data : []);
     }
   }
 
@@ -59,12 +55,10 @@ export default function MyAssets() {
 
   async function loadBiddingNFTs() {
     if (userAccount) {
-      const bidNFTsResponse = await ApiClient(userAccount).get(
-        `/user/bidding-nfts`
+      const bidNFTsResponse = await axiosFetcher(
+        `user/${userAccount}/bidding-nfts`
       );
-      setBiddingNfts(
-        bidNFTsResponse?.data?.data ? bidNFTsResponse?.data?.data : []
-      );
+      setBiddingNfts(bidNFTsResponse?.data ? bidNFTsResponse?.data : []);
     }
   }
 

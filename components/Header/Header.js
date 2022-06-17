@@ -24,12 +24,10 @@ import Image from "next/image";
 import NumberFormat from "react-number-format";
 import { Tooltip, Whisper } from "rsuite";
 import { getName, getImage } from "../../utils/web3";
-import { getSession } from "next-auth/react";
 import SearchBar from "./SearchBar/SearchBar";
+import { axiosFetcher } from "../../utils/fetcher";
 
 function Header() {
-  const router = useRouter();
-  const currentLink = router.pathname;
   const { isActive, chainId, account, provider, connector } = useWeb3React();
   const [referrer, setReferrer] = useState("");
   const { isDrawerOpen } = useDrawerState();
@@ -60,11 +58,16 @@ function Header() {
   const [userData, setUserData] = useState();
   useEffect(() => {
     async function getUser() {
-      const session = await getSession();
-      console.log("session nav", session);
-      setUserData(session?.user ? session?.user : {});
+      const userData = await axiosFetcher(`user/${account}`);
+      if (userData?.data) {
+        setUserData(userData.data);
+      } else {
+        setUserData({});
+      }
     }
-    getUser();
+    if (account) {
+      getUser();
+    }
   }, [account]);
 
   const [hoverProfileRef, isHoveredProfile] = useHover();
@@ -516,7 +519,7 @@ function Header() {
           </p>
           <div
             onClick={() => goToPage("/account")}
-            className={`px-6 py-5`}
+            className={`px-6 py-5 cursor-pointer`}
             ref={hoverProfileRef}
           >
             {isActive ? (

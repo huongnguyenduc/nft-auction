@@ -1,45 +1,57 @@
 import Image from "next/image";
 import React from "react";
-import ERC721Contract from "../../contracts/UITToken721.json";
-import ERC1155Contract from "../../contracts/UITToken1155.json";
-import Web3Modal from "web3modal";
 import Router from "next/router";
 import { useWeb3React } from "@web3-react/core";
 import { uploadFileToCloudinary } from "../../utils/upload";
 import ApiClient from "../../utils/ApiClient";
-import { ethers } from "ethers";
 import { useState } from "react";
 import LoadingUI from "../../components/LoadingUI";
 import NotificationUI from "../../components/Notification";
 import { useToaster } from "rsuite";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
+import { axiosFetcher } from "../../utils/fetcher";
 
-const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
-const verifySignatureContractAddress =
-  process.env.NEXT_PUBLIC_VERIFY_SIGNATURE_CONTRACT_ADDRESS;
-
-const CreateCollection = () => {
+const EditCollection = () => {
   const { isActive, account } = useWeb3React();
+  const router = useRouter();
+  const { address } = router.query;
 
   React.useEffect(() => {
-    if (!isActive) {
-      Router.push(`/login?referrer=collections/create`);
+    if (!isActive && address) {
+      Router.push(`/login?referrer=collections/edit?address=${address}`);
     } else {
       // login();
     }
-  }, [isActive]);
+  }, [isActive, address]);
+
   const avatarFileInput = React.useRef();
   const bannerFileInput = React.useRef();
   const [collectionForm, setCollectionForm] = React.useState({
-    logoImage: "",
-    logoImageURL: "",
-    bannerImage: "",
-    bannerImageURL: "",
+    image: "",
+    imageURL: "",
+    banner: "",
+    bannerURL: "",
     name: "",
     description: "",
     type: "erc721",
   });
+  useEffect(() => {
+    async function getCollection() {
+      const collectionData = await axiosFetcher(`collection/${address}`);
+      if (collectionData?.data) {
+        setCollectionForm({
+          ...collectionData.data,
+          type: collectionData.data.isMultiToken ? "erc1155" : "erc721",
+        });
+      }
+    }
+    if (account && address) {
+      getCollection();
+    }
+  }, [account, address]);
   const [collectionFormError, setCollectionFormError] = React.useState({
-    logoImageError: "",
+    imageError: "",
     nameError: "",
   });
 
@@ -49,8 +61,8 @@ const CreateCollection = () => {
     if (event.target.files[0]) {
       setCollectionForm((prevData) => ({
         ...prevData,
-        logoImage: event.target.files[0],
-        logoImageURL: URL.createObjectURL(event.target.files[0]),
+        image: event.target.files[0],
+        imageURL: URL.createObjectURL(event.target.files[0]),
       }));
     }
   }
@@ -58,18 +70,18 @@ const CreateCollection = () => {
     if (event.target.files[0]) {
       setCollectionForm((prevData) => ({
         ...prevData,
-        bannerImage: event.target.files[0],
-        bannerImageURL: URL.createObjectURL(event.target.files[0]),
+        banner: event.target.files[0],
+        bannerURL: URL.createObjectURL(event.target.files[0]),
       }));
     }
   }
 
   function validateCreateCollection() {
     let isValidated = true;
-    if (!collectionForm.logoImage) {
+    if (!collectionForm.image) {
       setCollectionFormError((error) => ({
         ...error,
-        logoImageError: "Logo image is required.",
+        imageError: "Logo image is required.",
       }));
       isValidated = false;
     }
@@ -83,67 +95,46 @@ const CreateCollection = () => {
     return isValidated;
   }
 
-  const [createStatus, setCreateStatus] = useState("adding");
+  const [createStatus, setCreateStatus] = useState("update");
   const [createError, setCreateError] = useState("");
 
   async function createCollection() {
-    const web3Modal = new Web3Modal();
-    const connection = await web3Modal.connect();
-    const provider = new ethers.providers.Web3Provider(connection);
-    const signer = await provider.getSigner();
-    let contract;
-    setCreateStatus("creating");
+    setCreateStatus("updating");
     try {
-      const { url: image } = await uploadFileToCloudinary(
-        collectionForm.logoImage
-      );
-      const { url: banner } = await uploadFileToCloudinary(
-        collectionForm.bannerImage
-      );
-      if (collectionForm.type === "erc1155") {
-        contract = new ethers.ContractFactory(
-          ERC1155Contract.abi,
-          ERC1155Contract.bytecode,
-          signer
-        );
-      } else {
-        contract = new ethers.ContractFactory(
-          ERC721Contract.abi,
-          ERC721Contract.bytecode,
-          signer
-        );
+      let image = collectionForm.image;
+      let banner = collectionForm.banner;
+      if (collectionForm.imageURL) {
+        const { url } = await uploadFileToCloudinary(collectionForm.image);
+        image = url;
       }
-      const collection = await contract.deploy(
-        collectionForm.name,
-        "UIT",
-        marketplaceAddress
-      );
-      await collection.deployed();
-      console.log("collection", collection.address);
-      const createCollectionResponse = await ApiClient(account).post(
-        "/collection",
+      if (collectionForm.bannerURL) {
+        const { url } = await uploadFileToCloudinary(collectionForm.banner);
+        banner = url;
+      }
+      const updateCollectionResponse = await ApiClient(account).patch(
+        `/collection/${address}`,
         {
           name: collectionForm.name,
-          address: collection.address,
-          isMultiToken: collectionForm.type === "erc721" ? false : true,
+          address,
+          isMultiToken: collectionForm.isMultiToken,
           image,
           banner,
           description: collectionForm.description,
         }
       );
-      setCreateStatus("created");
+      setCreateStatus("updated");
       const successCode = toaster.push(
         <NotificationUI
-          message="Create collection successfully."
+          message="Update collection successfully."
           type="success"
         />,
         { placement: "bottomStart" }
       );
       setTimeout(() => toaster.remove(successCode), 2500);
-      console.log("create collection", createCollectionResponse);
-      Router.push(`/collections/${collection.address}`);
+      console.log("create collection", updateCollectionResponse);
+      Router.push(`/collections/${address}`);
     } catch (error) {
-      setCreateStatus("adding");
+      setCreateStatus("error");
       setCreateError(error.message);
       const failureCode = toaster.push(
         <NotificationUI message={error.message} type="error" />,
@@ -156,7 +147,7 @@ const CreateCollection = () => {
   return (
     <div className="flex justify-center">
       <div className="w-2/3 flex flex-col py-12">
-        <p className="text-4xl font-semibold mb-6">Create a Collection</p>
+        <p className="text-4xl font-semibold mb-6">Edit a Collection</p>
         <div className="w-full flex-none text-xs font-medium text-slate-600 mt-2">
           <span className="text-red-600">*</span> Required field
         </div>
@@ -184,11 +175,21 @@ const CreateCollection = () => {
             className="border-dashed border-[3px] border-gray-400 rounded-[50%] h-[160px] w-[160px] flex justify-center items-center cursor-pointer p-1"
           >
             <div className="relative flex justify-center items-center hover:bg-gray-200/50 w-full h-full rounded-[50%] z-11">
-              {collectionForm.logoImageURL ? (
+              {collectionForm.imageURL ? (
                 <div className="absolute rounded-[50%] overflow-hidden w-full h-full z-10">
                   <Image
                     layout="fill"
-                    src={collectionForm.logoImageURL}
+                    src={collectionForm.imageURL}
+                    unoptimized={true}
+                    objectFit="cover"
+                    alt="avatar-image"
+                  />
+                </div>
+              ) : collectionForm.image ? (
+                <div className="absolute rounded-[50%] overflow-hidden w-full h-full z-10">
+                  <Image
+                    layout="fill"
+                    src={collectionForm.image}
                     unoptimized={true}
                     objectFit="cover"
                     alt="avatar-image"
@@ -213,9 +214,7 @@ const CreateCollection = () => {
               </svg>
             </div>
           </div>
-          <p className="text-red-500 mt-2">
-            {collectionFormError.logoImageError}
-          </p>
+          <p className="text-red-500 mt-2">{collectionFormError.imageError}</p>
         </div>
         <div className="mt-6">
           <label
@@ -242,11 +241,21 @@ const CreateCollection = () => {
             className="border-dashed border-[3px] border-gray-400 rounded-lg h-[200px] w-[700px] flex justify-center items-center p-1 cursor-pointer"
           >
             <div className="relative flex justify-center items-center hover:bg-gray-200/50 w-full h-full rounded-lg z-5">
-              {collectionForm.bannerImageURL ? (
+              {collectionForm.bannerURL ? (
                 <div className="absolute rounded-lg overflow-hidden w-full h-full z-10 hover:z-[3]">
                   <Image
                     layout="fill"
-                    src={collectionForm.bannerImageURL}
+                    src={collectionForm.bannerURL}
+                    unoptimized={true}
+                    objectFit="cover"
+                    alt="banner-image"
+                  />
+                </div>
+              ) : collectionForm.banner ? (
+                <div className="absolute rounded-lg overflow-hidden w-full h-full z-10 hover:z-[3]">
+                  <Image
+                    layout="fill"
+                    src={collectionForm.banner}
                     unoptimized={true}
                     objectFit="cover"
                     alt="banner-image"
@@ -288,6 +297,7 @@ const CreateCollection = () => {
                 name: e.target.value,
               }));
             }}
+            value={collectionForm.name}
             className="border-2 rounded-lg p-3 w-full text-base mb-4 focus:shadow-lg focus-visible:outline-none"
           />
           <p className="text-red-500 mt-2">{collectionFormError.nameError}</p>
@@ -307,6 +317,7 @@ const CreateCollection = () => {
                 description: e.target.value,
               }));
             }}
+            value={collectionForm.description}
             className="mt-2 border-2 rounded-lg p-3 w-full focus:shadow-lg focus-visible:outline-none"
           />
         </div>
@@ -319,12 +330,14 @@ const CreateCollection = () => {
           </label>
           <select
             id="collection"
+            disabled
             onChange={(e) =>
               setCollectionForm((prevData) => ({
                 ...prevData,
                 type: e.target.value,
               }))
             }
+            value={collectionForm.type}
             className="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 focus:shadow-lg focus-visible:outline-none"
           >
             <option defaultValue value="erc721">
@@ -338,11 +351,11 @@ const CreateCollection = () => {
             onClick={() => {
               if (validateCreateCollection()) createCollection();
             }}
-            disabled={createStatus === "creating"}
+            disabled={createStatus === "updating"}
             className="font-bold mt-6 bg-blue-500 text-white rounded-xl py-4 px-6"
           >
-            {createStatus === "creating" ? <LoadingUI /> : <></>}
-            Create
+            {createStatus === "updating" ? <LoadingUI /> : <></>}
+            Update
           </button>
           <p className="text-red-500">{createError}</p>
         </div>
@@ -351,4 +364,4 @@ const CreateCollection = () => {
   );
 };
 
-export default CreateCollection;
+export default EditCollection;

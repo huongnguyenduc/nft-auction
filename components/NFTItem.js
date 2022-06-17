@@ -13,7 +13,7 @@ const NFTItem = ({ nft }) => {
       <div className="flex h-full items-center relative rounded w-full">
         <Image
           layout="fill"
-          objectFit="contain"
+          objectFit="cover"
           src={nft?.image}
           alt={nft?.name}
         />
@@ -24,7 +24,7 @@ const NFTItem = ({ nft }) => {
             <p className="text-xs font-base pr-1 text-gray-500">
               {nft?.isMultiToken ? "ERC1155" : "ERC721"}
             </p>
-            <p className="text-xs font-semibold mt-0">{nft?.name}</p>
+            <p className="text-xs font-semibold mb-2">{nft?.name}</p>
           </div>
           {nft?.bidded && nft?.sold ? (
             <></>

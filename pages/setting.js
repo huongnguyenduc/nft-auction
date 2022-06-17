@@ -79,7 +79,7 @@ const Setting = () => {
     try {
       setUpdateStatus("updating");
       let image = userForm.image;
-      let banner = userForm.image;
+      let banner = userForm.banner;
       if (userForm.imageURL) {
         const { url } = await uploadFileToCloudinary(userForm.image);
         image = url;
@@ -89,10 +89,10 @@ const Setting = () => {
         banner = url;
       }
       const updateUserResponse = await ApiClient(account).patch("/user", {
-        name: userForm.name,
+        username: userForm.username,
         image,
         banner,
-        bio: userForm.description,
+        bio: userForm.bio,
         email: userForm.email,
       });
       setUpdateStatus("updated");

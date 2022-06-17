@@ -40,7 +40,7 @@ export const connectors = [
 ];
 
 export function convertWeiToEther(wei) {
-  if (wei.toString() === "") {
+  if (!wei || wei.toString() === "") {
     return "";
   }
   return ethers.utils.formatEther(wei.toString());

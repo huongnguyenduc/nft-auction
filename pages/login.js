@@ -4,7 +4,7 @@ import WalletList from "../components/WalletList";
 
 const Login = () => {
   const router = useRouter();
-  const { referrer, id, tokenURI, isMultiToken } = router.query;
+  const { referrer, id, needSign } = router.query;
 
   return (
     <div className="w-full h-full flex justify-center pt-12">
@@ -16,16 +16,8 @@ const Login = () => {
             one.
           </p>
           <WalletList
-            referrer={`/${referrer}${
-              id && tokenURI && isMultiToken
-                ? "?id=" +
-                  id +
-                  "&tokenURI=" +
-                  tokenURI +
-                  "&isMultiToken=" +
-                  isMultiToken
-                : ""
-            }`}
+            referrer={`/${referrer}${id ? "?id=" + id : ""}`}
+            needSign={needSign}
           />
         </div>
       </div>

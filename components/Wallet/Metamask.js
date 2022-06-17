@@ -9,11 +9,13 @@ const {
   useIsActive,
   useProvider,
   useENSNames,
+  useAccount,
 } = hooks;
 
-export default function MetaMaskCard({ referrer }) {
+export default function MetaMaskCard({ referrer, needSign }) {
   const chainId = useChainId();
   const accounts = useAccounts();
+  const account = useAccount();
   const isActivating = useIsActivating();
 
   const isActive = useIsActive();
@@ -32,6 +34,7 @@ export default function MetaMaskCard({ referrer }) {
 
   return (
     <WalletContainer
+      needSign={needSign}
       connector={metaMask}
       chainId={chainId}
       isActivating={isActivating}
@@ -39,6 +42,7 @@ export default function MetaMaskCard({ referrer }) {
       error={error}
       setError={setError}
       accounts={accounts}
+      account={account}
       provider={provider}
       ENSNames={ENSNames}
       referrer={referrer}

@@ -7,7 +7,7 @@ import Router from "next/router";
 const NFTItem = ({ nft }) => {
   return (
     <div
-      onClick={() => Router.push(`/detail?id=${nft.tokenId}`)}
+      onClick={() => Router.push(`/detail?id=${nft?.tokenId}`)}
       className="flex flex-col border cursor-pointer shadow rounded-xl overflow-hidden bg-white transition ease-out hover:shadow-lg aspect-[3/4]"
     >
       <div className="flex h-full items-center relative rounded w-full">
@@ -37,9 +37,10 @@ const NFTItem = ({ nft }) => {
                 <p className="text-xs font-semibold pr-1">
                   {nft?.bidded
                     ? convertWeiToEther(nft?.price)
-                    : nft?.auctionInfo.highestBid.toString() !== "0"
-                    ? convertWeiToEther(nft?.auctionInfo.highestBid)
-                    : convertWeiToEther(nft?.auctionInfo.startingPrice)}
+                    : nft?.auctionInfo?.highestBid &&
+                      nft?.auctionInfo?.highestBid?.toString() !== "0"
+                    ? convertWeiToEther(nft?.auctionInfo?.highestBid)
+                    : convertWeiToEther(nft?.auctionInfo?.startingPrice)}
                 </p>
                 <Image
                   src="https://openseauserdata.com/files/6f8e2979d428180222796ff4a33ab929.svg"
@@ -48,7 +49,7 @@ const NFTItem = ({ nft }) => {
                   width={8}
                 />
               </div>
-              {nft.bidded ? (
+              {nft?.bidded ? (
                 <div className="text-xs font-thin invisible">No</div>
               ) : (
                 <div className="flex justify-end items-center gap-1">
@@ -68,12 +69,7 @@ const NFTItem = ({ nft }) => {
                   </svg>
                   <p className="text-xs font-thin">
                     {nft?.auctionInfo?.endAt
-                      ? timeLeft(
-                          new Date(
-                            Date.now() +
-                              parseInt(nft?.auctionInfo?.endAt.toString())
-                          )
-                        )
+                      ? timeLeft(new Date(nft?.auctionInfo?.endAt))
                       : ""}
                   </p>
                 </div>

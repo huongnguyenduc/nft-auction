@@ -6,7 +6,7 @@ import Web3Modal from "web3modal";
 import Router from "next/router";
 import { useWeb3React } from "@web3-react/core";
 import { uploadFileToCloudinary } from "../../utils/upload";
-import ApiClient from "../../utils/ApiClient";
+import ApiClient, { verifyUser } from "../../utils/ApiClient";
 import { ethers } from "ethers";
 import { useState } from "react";
 import LoadingUI from "../../components/LoadingUI";
@@ -19,12 +19,15 @@ const CreateCollection = () => {
   const { isActive, account } = useWeb3React();
 
   React.useEffect(() => {
-    if (!isActive) {
-      Router.push(`/login?referrer=collections/create`);
-    } else {
-      // login();
+    async function verifyCurrentUser() {
+      await verifyUser(account);
     }
-  }, [isActive]);
+    if (!isActive) {
+      Router.push(`/login?referrer=collections/create&needSign=true`);
+    } else if (account) {
+      verifyCurrentUser();
+    }
+  }, [isActive, account]);
   const avatarFileInput = React.useRef();
   const bannerFileInput = React.useRef();
   const [collectionForm, setCollectionForm] = React.useState({
@@ -85,6 +88,7 @@ const CreateCollection = () => {
   const [createError, setCreateError] = useState("");
 
   async function createCollection() {
+    await verifyUser(account);
     const web3Modal = new Web3Modal();
     const connection = await web3Modal.connect();
     const provider = new ethers.providers.Web3Provider(connection);

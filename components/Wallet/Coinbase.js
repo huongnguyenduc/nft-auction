@@ -9,11 +9,13 @@ const {
   useIsActive,
   useProvider,
   useENSNames,
+  useAccount,
 } = hooks;
 
-export default function CoinbaseWalletCard({ referrer }) {
+export default function CoinbaseWalletCard({ referrer, needSign }) {
   const chainId = useChainId();
   const accounts = useAccounts();
+  const account = useAccount();
   const isActivating = useIsActivating();
 
   const isActive = useIsActive();
@@ -32,6 +34,7 @@ export default function CoinbaseWalletCard({ referrer }) {
 
   return (
     <WalletContainer
+      needSign={needSign}
       connector={coinbaseWallet}
       chainId={chainId}
       isActivating={isActivating}
@@ -39,6 +42,7 @@ export default function CoinbaseWalletCard({ referrer }) {
       error={error}
       setError={setError}
       accounts={accounts}
+      account={account}
       provider={provider}
       ENSNames={ENSNames}
       referrer={referrer}

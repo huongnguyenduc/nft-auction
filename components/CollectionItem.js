@@ -65,7 +65,13 @@ const CollectionItem = ({ collection, account, canEdit }) => {
           {name}
         </p>
         <div className="mt-2 flex w-full justify-center">
-          <div className="flex gap-1 items-center">
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              Router.push(`/account?address=${owner}`);
+            }}
+            className="flex gap-1 items-center cursor-pointer"
+          >
             <p className="font-medium text-sm">by </p>
             <p className="font-medium text-sm text-blue-400 mt-0">
               {getShortAddress(owner, account) === "you"

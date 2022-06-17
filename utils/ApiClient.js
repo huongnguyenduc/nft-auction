@@ -46,6 +46,31 @@ async function login(account) {
   }
 }
 
+export async function verifyUser(account) {
+  try {
+    const session = await getSession();
+    if (
+      session &&
+      session?.user?.wallet === account &&
+      !(session?.error === "RefreshAccessTokenError")
+    ) {
+      console.log("verify okie");
+    } else {
+      // if (session) {
+      //   await signOut();
+      // }
+      console.log("verify ko okie", session);
+      console.log("address", account);
+      console.log("1", !!session);
+      console.log("2", !!session?.user?.wallet === account);
+      console.log("3", !!!(session?.error === "RefreshAccessTokenError"));
+      await login(account);
+    }
+  } catch (e) {
+    console.log("verify user failed", e);
+  }
+}
+
 const baseURL =
   process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:1337";
 

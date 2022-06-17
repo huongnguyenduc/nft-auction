@@ -26,6 +26,7 @@ import { Tooltip, Whisper } from "rsuite";
 import { getName, getImage } from "../../utils/web3";
 import SearchBar from "./SearchBar/SearchBar";
 import { axiosFetcher } from "../../utils/fetcher";
+import { signOut } from "next-auth/react";
 
 function Header() {
   const { isActive, chainId, account, provider, connector } = useWeb3React();
@@ -124,6 +125,7 @@ function Header() {
             } else {
               connector.resetState();
             }
+            signOut();
           }}
           className="flex justify-between p-4 cursor-pointer hover:bg-blue-50/60 hover:shadow-lg"
         >

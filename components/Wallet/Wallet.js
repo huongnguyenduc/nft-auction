@@ -7,6 +7,8 @@ import NotificationUI from "../Notification";
 import Router from "next/router";
 import { useDrawerDispatch, closeDrawer, useDrawerState } from "../useDrawer";
 import { WalletConnect } from "@web3-react/walletconnect";
+import { verifyUser } from "../../utils/ApiClient";
+import { MetaMask } from "@web3-react/metamask";
 
 export function Wallet({ connector, isActivating, isActive, error, chainId }) {
   return (
@@ -46,6 +48,8 @@ export function WalletContainer({
   setError,
   referrer,
   chainId,
+  needSign,
+  account,
 }) {
   const { isDrawerOpen } = useDrawerState();
   const desiredChainId = 4;
@@ -56,9 +60,10 @@ export function WalletContainer({
       try {
         if (isDrawerOpen) {
           closeDrawer(drawerDispatch);
-        } else {
-          Router.push(`${referrer}`);
+        } else if (needSign && account) {
+          await verifyUser(account);
         }
+        Router.push(`${referrer}`);
       } catch (e) {
         console.log("Error when login: ", e);
       }
@@ -120,7 +125,7 @@ export function WalletContainer({
         />
       </div>
     );
-  } else if (isActive && chainId === 4) {
+  } else if (isActive && chainId === 4 && account) {
     referToPage();
     return (
       <div

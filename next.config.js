@@ -10,6 +10,7 @@ const nextConfig = {
       "ipfs.infura.io",
       "lh3.googleusercontent.com",
       "res.cloudinary.com",
+      "img.seadn.io",
       "",
     ],
   },

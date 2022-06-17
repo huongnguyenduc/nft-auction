@@ -1,16 +1,13 @@
-import React from "react";
-import Router from "next/router";
-import { useDrawerDispatch, closeDrawer } from "./useDrawer";
 import MetaMaskCard from "./Wallet/Metamask";
 import CoinbaseWalletCard from "./Wallet/Coinbase";
 import WalletConnectCard from "./Wallet/WalletConnect";
 
-const WalletList = ({ referrer }) => {
+const WalletList = ({ referrer, needSign }) => {
   return (
     <>
-      <MetaMaskCard referrer={referrer} />
-      <CoinbaseWalletCard referrer={referrer} />
-      <WalletConnectCard referrer={referrer} />
+      <MetaMaskCard referrer={referrer} needSign={needSign} />
+      <CoinbaseWalletCard referrer={referrer} needSign={needSign} />
+      <WalletConnectCard referrer={referrer} needSign={needSign} />
     </>
   );
 };

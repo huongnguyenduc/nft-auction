@@ -13,7 +13,9 @@ import { Modal } from "rsuite";
 import styles from "../components/Modal/Modal.module.css";
 import { useWeb3React } from "@web3-react/core";
 import { axiosFetcher } from "../utils/fetcher";
-import ApiClient from "../utils/ApiClient";
+import ApiClient, { verifyUser } from "../utils/ApiClient";
+import { useToaster } from "rsuite";
+import NotificationUI from "../components/Notification";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
@@ -22,13 +24,19 @@ import Checked from "../components/Icon/Checked";
 
 export default function ListNFT() {
   const router = useRouter();
+  const toaster = useToaster();
   const { id } = router.query;
   const { isActive, account } = useWeb3React();
   useEffect(() => {
-    if (!isActive && id) {
-      Router.push(`/login?referrer=sell&id=${id}`);
+    async function verifyCurrentUser() {
+      await verifyUser(account);
     }
-  }, [isActive]);
+    if (!isActive && id) {
+      Router.push(`/login?referrer=sell&id=${id}&needSign=true`);
+    } else if (account) {
+      verifyCurrentUser();
+    }
+  }, [isActive, account]);
   const [isCreateAuction, setIsCreateAuction] = useState(false);
   const [openSellModal, setOpenSellModal] = useState(false);
   const handleOpenModal = () => setOpenSellModal(true);
@@ -56,6 +64,7 @@ export default function ListNFT() {
     if (!price) return;
     handleOpenModal();
     try {
+      await verifyUser(account);
       setListItemError();
       const web3Modal = new Web3Modal();
       const connection = await web3Modal.connect();
@@ -100,6 +109,14 @@ export default function ListNFT() {
           }
         );
         console.log("created auction", createAuctionRequest);
+        const successCode = toaster.push(
+          <NotificationUI
+            message="Create auction successfully."
+            type="success"
+          />,
+          { placement: "bottomStart" }
+        );
+        setTimeout(() => toaster.remove(successCode), 2500);
       } else {
         let transaction = await contract.listMarketItem(id, priceFormatted, {
           value: listingPrice,
@@ -113,11 +130,21 @@ export default function ListNFT() {
           }
         );
         console.log("created market item", createMarketItemRequest);
+        const successCode = toaster.push(
+          <NotificationUI message="List item successfully." type="success" />,
+          { placement: "bottomStart" }
+        );
+        setTimeout(() => toaster.remove(successCode), 2500);
       }
       setListItemStatus("Listed");
     } catch (error) {
       setListItemError(error.message);
       console.log("Unknown error: ", error);
+      const failureCode = toaster.push(
+        <NotificationUI message={error.message} type="error" />,
+        { placement: "bottomStart" }
+      );
+      setTimeout(() => toaster.remove(failureCode), 2500);
     }
   }
 

@@ -17,13 +17,14 @@ export default function Home() {
   const [isOnAuction, setIsOnAuction] = useState(true);
   const auctionQuery = isOnAuction ? "&bidded=false" : "&bidded=true";
   const buyQuery = isBuying ? "&sold=false" : "&sold=true";
+  const [sortQuery, setSortQuery] = useState("");
   const { data, error, size, setSize } = useSWRInfinite(
     (index) => [
       `nft?pageNumber=${
         index + 1
       }&pageSize=${PAGE_SIZE}${auctionQuery}${buyQuery}${
         query ? "&name=" + query : ""
-      }`,
+      }${sortQuery}`,
     ],
     axiosFetcher
   );
@@ -85,7 +86,31 @@ export default function Home() {
         <div className="flex items-center h-full gap-4">
           <SelectPicker
             className={styles.customSelectPicker}
-            data={[{ label: "Recently Listed", value: "Listed" }]}
+            data={[
+              {
+                label: "Recently Listed",
+                value: "&sortBy=updatedAt&sortDirection=DESC",
+              },
+              {
+                label: "Oldest",
+                value: "&sortBy=updatedAt",
+              },
+              { label: "Price low to high", value: "&sortBy=price" },
+              {
+                label: "Price high to low",
+                value: "&sortBy=price&sortDirection=DESC",
+              },
+              {
+                label: "Ending soon",
+                value: "&sortBy=auctionInfo.endAt",
+              },
+            ]}
+            onChange={(value) => {
+              setSortQuery(value);
+            }}
+            onClean={() => {
+              setSortQuery("");
+            }}
             searchable={false}
             placeholder="Sort by"
             style={{ width: 224 }}

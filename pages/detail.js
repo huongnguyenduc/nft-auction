@@ -9,14 +9,14 @@ import { Modal } from "rsuite";
 import { isNumeric, getShortAddress } from "../utils/utils";
 import { convertWeiToEther } from "../utils/web3";
 import LoadingPage from "../components/Loading";
-import { useToaster } from "rsuite";
 import useBalance from "../components/useBalance";
 import styles from "../components/Modal/Modal.module.css";
+import { useToaster } from "rsuite";
 import NotificationUI from "../components/Notification";
 import LoadingUI from "../components/LoadingUI";
 import { axiosFetcher } from "../utils/fetcher";
 import { useDrawerDispatch, openDrawer } from "../components/useDrawer";
-import ApiClient from "../utils/ApiClient";
+import ApiClient, { verifyUser } from "../utils/ApiClient";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
@@ -108,6 +108,7 @@ function NFTDetail() {
       openDrawer(drawerDispatch);
     } else
       try {
+        await verifyUser(userAccount);
         const web3Modal = new Web3Modal();
         const connection = await web3Modal.connect();
         const provider = new ethers.providers.Web3Provider(connection);
@@ -149,6 +150,7 @@ function NFTDetail() {
       openDrawer(drawerDispatch);
     } else
       try {
+        await verifyUser(userAccount);
         const web3Modal = new Web3Modal();
         const connection = await web3Modal.connect();
         const provider = new ethers.providers.Web3Provider(connection);
@@ -180,6 +182,7 @@ function NFTDetail() {
       openDrawer(drawerDispatch);
     } else
       try {
+        await verifyUser(userAccount);
         const web3Modal = new Web3Modal();
         const connection = await web3Modal.connect();
         const provider = new ethers.providers.Web3Provider(connection);
@@ -233,6 +236,7 @@ function NFTDetail() {
       openDrawer(drawerDispatch);
     } else
       try {
+        await verifyUser(userAccount);
         const web3Modal = new Web3Modal();
         const connection = await web3Modal.connect();
         const provider = new ethers.providers.Web3Provider(connection);
@@ -675,9 +679,7 @@ function NFTDetail() {
                       Sale ends{" "}
                       {nftData.auctionInfo.endAt
                         ? new Date(
-                            parseInt(
-                              nftData.auctionInfo.endAt.toString() + "000"
-                            )
+                            nftData.auctionInfo.endAt
                           ).toLocaleDateString("en-US", dateOptions)
                         : ""}
                     </p>

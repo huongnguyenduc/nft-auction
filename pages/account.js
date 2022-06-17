@@ -1,66 +1,73 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { getShortAddress } from "../utils/utils";
-import Router from "next/router";
+import Router, { useRouter } from "next/router";
 import NFTItem from "../components/NFTItem";
 import { useWeb3React } from "@web3-react/core";
 import { axiosFetcher } from "../utils/fetcher";
-
+import NFTItemSkeleton from "../components/NFTItemSkeleton";
+import LoadingPage from "../components/Loading";
+import useSWRInfinite from "swr/infinite";
+const PAGE_SIZE = 6;
 export default function MyAssets() {
   const [userData, setUserData] = useState();
+  const router = useRouter();
+  const { address } = router.query;
   const { isActive, account: userAccount } = useWeb3React();
   useEffect(() => {
     async function getUser() {
-      const userData = await axiosFetcher(`user/${userAccount}`);
+      let userData;
+      if (address) userData = await axiosFetcher(`user/${address}`);
+      else userData = await axiosFetcher(`user/${userAccount}`);
       if (userData?.data) {
         setUserData(userData.data);
       }
     }
-    if (!isActive) {
+    if (!isActive && !address) {
       Router.push(`/login?referrer=account`);
     } else {
       if (userAccount) {
-        loadNFTs();
         getUser();
       }
     }
-  }, [isActive]);
-  const [nfts, setNfts] = useState([]);
-  const [tabState, setTabState] = useState("collected");
+  }, [isActive, userAccount, address]);
+  const [tabState, setTabState] = useState("nfts");
+  const { data, error, size, setSize } = useSWRInfinite(
+    (index) => [
+      `user/${address ? address : userAccount}/${tabState}?pageNumber=${
+        index + 1
+      }&pageSize=${PAGE_SIZE}`,
+    ],
+    axiosFetcher
+  );
+
+  const nfts = data
+    ? [].concat(...data?.map((response) => response?.data))
+    : [];
+  const isLoadingInitialData = !data && !error;
+  const isLoadingMore =
+    isLoadingInitialData ||
+    (size > 0 && data && typeof data[size - 1] === "undefined");
+  const isEmpty = data?.[0].data?.length === 0;
+  const hasNoMore =
+    isEmpty || (data && data?.[0]?.pagination?.total === nfts?.length);
   useEffect(() => {
-    if (userAccount) {
-      loadNFTs();
-      setTabState("collected");
-    }
-  }, [userAccount]);
-  async function loadNFTs() {
-    if (userAccount) {
-      const myNFTsResponse = await axiosFetcher(`user/${userAccount}/nfts`);
-      setNfts(myNFTsResponse?.data ? myNFTsResponse?.data : []);
-    }
-  }
-
-  const [listedNfts, setListedNfts] = useState([]);
-
-  async function loadListedNFTs() {
-    if (userAccount) {
-      const listingNFTsResponse = await axiosFetcher(
-        `user/${userAccount}/listing-nfts`
-      );
-      setListedNfts(listingNFTsResponse?.data ? listingNFTsResponse?.data : []);
+    window.addEventListener("scroll", reachEndCallback, false);
+    return () => {
+      window.removeEventListener("scroll", reachEndCallback, false);
+    };
+  }, [hasNoMore]);
+  function reachEnd() {
+    if (
+      window.innerHeight + window.scrollY >= document.body.offsetHeight &&
+      !hasNoMore
+    ) {
+      setSize((size) => size + 1);
     }
   }
-
-  const [biddingNfts, setBiddingNfts] = useState([]);
-
-  async function loadBiddingNFTs() {
-    if (userAccount) {
-      const bidNFTsResponse = await axiosFetcher(
-        `user/${userAccount}/bidding-nfts`
-      );
-      setBiddingNfts(bidNFTsResponse?.data ? bidNFTsResponse?.data : []);
-    }
-  }
+  const reachEndCallback = useCallback(() => {
+    reachEnd();
+  }, [hasNoMore]);
 
   return (
     <div className="flex flex-col items-center">
@@ -103,72 +110,81 @@ export default function MyAssets() {
         <div className="flex gap-12 py-5">
           <div
             onClick={() => {
-              setTabState("collected");
-              loadNFTs();
+              setTabState("nfts");
             }}
             className={`flex ${
-              tabState === "collected" ? "border-b-2" : "text-gray-500"
+              tabState === "nfts" ? "border-b-2" : "text-gray-500"
             } border-black items-center pb-2 cursor-pointer`}
           >
             <p className="font-semibold text-lg">Collected</p>
-            <p className="text-lg font-normal mt-0 ml-2">
+            {/* <p className="text-lg font-normal mt-0 ml-2">
               {nfts.length > 0 ? nfts.length : ""}
-            </p>
+            </p> */}
           </div>
           <div
             onClick={() => {
-              setTabState("onSale");
-              loadListedNFTs();
+              setTabState("listing-nfts");
             }}
             className={`flex ${
-              tabState === "onSale" ? "border-b-2" : "text-gray-500"
+              tabState === "listing-nfts" ? "border-b-2" : "text-gray-500"
             } border-black items-center pb-2 cursor-pointer`}
           >
             <p className="font-semibold text-lg">On sale</p>
-            <p className="text-lg font-normal mt-0 ml-2">
+            {/* <p className="text-lg font-normal mt-0 ml-2">
               {listedNfts.length > 0 ? listedNfts.length : ""}
-            </p>
+            </p> */}
           </div>
           <div
             onClick={() => {
-              setTabState("bidding");
-              loadBiddingNFTs();
+              setTabState("bidding-nfts");
             }}
             className={`flex ${
-              tabState === "bidding" ? "border-b-2" : "text-gray-500"
+              tabState === "bidding-nfts" ? "border-b-2" : "text-gray-500"
             } border-black items-center pb-2 cursor-pointer`}
           >
             <p className="font-semibold text-lg">Bidding</p>
-            <p className="text-lg font-normal mt-0 ml-2">
+            {/* <p className="text-lg font-normal mt-0 ml-2">
               {biddingNfts.length > 0 ? biddingNfts.length : ""}
-            </p>
+            </p> */}
           </div>
         </div>
         <div className="flex justify-center w-full pb-8">
           <div className="flex w-full">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 pt-4 w-full">
-              {tabState === "collected" ? (
-                nfts.map((nft, i) => (
-                  <NFTItem nft={nft} key={nft.toString() + i.toString()} />
-                ))
-              ) : (
-                <></>
-              )}
-              {tabState === "onSale" ? (
-                listedNfts.map((nft, i) => (
-                  <NFTItem nft={nft} key={nft.toString() + i.toString()} />
-                ))
-              ) : (
-                <></>
-              )}
-              {tabState === "bidding" ? (
-                biddingNfts.map((nft, i) => (
-                  <NFTItem nft={nft} key={nft.toString() + i.toString()} />
-                ))
-              ) : (
-                <></>
-              )}
-            </div>
+            {isLoadingInitialData ? (
+              <div className="w-full flex-1 flex justify-center items-center overflow-hidden py-12">
+                <LoadingPage />
+              </div>
+            ) : isEmpty || (nfts && nfts.length === 0) ? (
+              <div className="w-full flex-1 h-[60vh] flex flex-col gap-4 justify-center items-center py-12">
+                <p className="text-xl md:text-2xl text-gray-600 items-center">
+                  No items to display
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-8 w-full">
+                {nfts && nfts.length > 0 ? (
+                  nfts.map((nft, i) => (
+                    <NFTItem key={nft.image + i} nft={nft} />
+                  ))
+                ) : (
+                  <></>
+                )}
+                {hasNoMore ? (
+                  <></>
+                ) : isLoadingMore ? (
+                  <>
+                    <NFTItemSkeleton />
+                    <NFTItemSkeleton />
+                    <NFTItemSkeleton />
+                    <NFTItemSkeleton />
+                    <NFTItemSkeleton />
+                    <NFTItemSkeleton />
+                  </>
+                ) : (
+                  <></>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

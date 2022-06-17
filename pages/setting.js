@@ -5,13 +5,14 @@ import { useWeb3React } from "@web3-react/core";
 import { uploadFileToCloudinary } from "../utils/upload";
 import LoadingUI from "../components/LoadingUI";
 import { useToaster } from "rsuite";
-import ApiClient from "../utils/ApiClient";
+import ApiClient, { verifyUser } from "../utils/ApiClient";
 import NotificationUI from "../components/Notification";
 import { useEffect } from "react";
 import { axiosFetcher } from "../utils/fetcher";
+import Router from "next/router";
 
 const Setting = () => {
-  const { account } = useWeb3React();
+  const { account, isActive } = useWeb3React();
   const toaster = useToaster();
   const avatarFileInput = useRef();
   const bannerFileInput = useRef();
@@ -25,6 +26,16 @@ const Setting = () => {
     bannerURL: "",
     wallet: "",
   });
+  useEffect(() => {
+    async function verifyCurrentUser() {
+      await verifyUser(account);
+    }
+    if (!isActive) {
+      Router.push(`/login?referrer=setting&needSign=true`);
+    } else if (account) {
+      verifyCurrentUser();
+    }
+  }, [isActive, account]);
   useEffect(() => {
     async function getUser() {
       const userData = await axiosFetcher(`user/${account}`);
@@ -75,6 +86,7 @@ const Setting = () => {
   }
   const [updateStatus, setUpdateStatus] = useState("update");
   async function updateUser() {
+    await verifyUser(account);
     setUpdateStatus("update");
     try {
       setUpdateStatus("updating");

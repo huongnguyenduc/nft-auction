@@ -10,8 +10,9 @@ import Checked from "../components/Icon/Checked";
 import NFTMarketplace from "../contracts/NFTMarketplace.json";
 import Image from "next/image";
 import { uploadFileToIPFS } from "../utils/upload";
-import ApiClient from "../utils/ApiClient";
+import ApiClient, { verifyUser } from "../utils/ApiClient";
 import { axiosFetcher } from "../utils/fetcher";
+import ERC1155Contract from "../contracts/UITToken1155.json";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
@@ -20,12 +21,15 @@ export default function CreateItem() {
   const [userCollection, setUserCollection] = useState([]);
   const nftFileInput = useRef();
   useEffect(() => {
-    if (!isActive) {
-      Router.push(`/login?referrer=create`);
-    } else {
-      // login();
+    async function verifyCurrentUser() {
+      await verifyUser(account);
     }
-  }, [isActive]);
+    if (!isActive) {
+      Router.push(`/login?referrer=create&needSign=true`);
+    } else if (account) {
+      verifyCurrentUser();
+    }
+  }, [isActive, account]);
 
   useEffect(() => {
     async function getUserCollection() {
@@ -36,11 +40,17 @@ export default function CreateItem() {
       if (
         userCollectionResponse?.data &&
         userCollectionResponse?.data.length > 0
-      )
+      ) {
         updateFormInput({
           ...formInput,
           collection: userCollectionResponse?.data[0],
         });
+      } else {
+        updateFormInput({
+          ...formInput,
+          collection: {},
+        });
+      }
     }
     if (!!isActive && !!account && !isActivating) {
       getUserCollection();
@@ -69,7 +79,7 @@ export default function CreateItem() {
       if (typeof url === "string") setFileUrl(url);
       setValidateImageError("");
     } catch (error) {
-      setValidateImageError(error);
+      setValidateImageError(error.message);
     }
   }
   async function uploadToIPFS() {
@@ -89,6 +99,7 @@ export default function CreateItem() {
   }
 
   async function createMarketItem() {
+    await verifyUser(account);
     setIsMinting(true);
     handleOpenModal();
     const tokenUri = await uploadToIPFS();
@@ -106,11 +117,41 @@ export default function CreateItem() {
       );
       let listingPrice = await contract.getListingPrice();
       listingPrice = listingPrice.toString();
-      console.log("collection ne", collection);
+      let collectionAddress = collection.address;
+      let isMultiToken = collection.isMultiToken;
+      if (!collectionAddress) {
+        const CollectionContract = new ethers.ContractFactory(
+          ERC1155Contract.abi,
+          ERC1155Contract.bytecode,
+          signer
+        );
+        const collectionContract = await CollectionContract.deploy(
+          "UITToken1155",
+          "UIT",
+          marketplaceAddress
+        );
+        await collectionContract.deployed();
+        const createCollectionResponse = await ApiClient(account).post(
+          "/collection",
+          {
+            name: "UITToken1155",
+            address: collectionContract.address,
+            isMultiToken: true,
+            image:
+              "https://openseauserdata.com/files/06197b96a99cdcfee084d5247766e513.gif",
+            banner:
+              "https://img.seadn.io/files/b12c8e30fff1de1786a7a0a982c541af.png?fit=max&auto=format&h=600",
+            description:
+              "Welcome to the home of UITToken1155 on OpenSky. Discover the best items in this collection.",
+          }
+        );
+        collectionAddress = collectionContract.address;
+        isMultiToken = true;
+      }
       let transaction = await contract.createMarketItem(
-        collection.address,
+        collectionAddress,
         tokenUri,
-        collection.isMultiToken
+        isMultiToken
       );
       const rc = await transaction.wait();
       const event = rc.events.find(
@@ -119,13 +160,12 @@ export default function CreateItem() {
       const tokenId = event.args[0].toString();
       const mintTokenRequest = await ApiClient(account).post(`/nft`, {
         tokenId,
-        nftContract: collection.address,
+        nftContract: collectionAddress,
         name,
         description,
         image: fileUrl,
-        isMultiToken: collection.isMultiToken,
+        isMultiToken: isMultiToken,
       });
-      console.log(mintTokenRequest, "request");
       Router.push(`/detail?id=${mintTokenRequest?.data?.data?.tokenId}`);
       setIsMinting(false);
       handleCloseModal();
@@ -335,14 +375,17 @@ export default function CreateItem() {
             </label>
             <select
               id="collection"
-              onChange={(e) =>
-                updateFormInput({ ...formInput, collection: e.target.value })
-              }
+              onChange={(e) => {
+                updateFormInput({
+                  ...formInput,
+                  collection: userCollection[e.target.value],
+                });
+              }}
               className="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 focus:shadow-lg focus:border-gray-400 focus:ring-0"
             >
               {userCollection && userCollection.length > 0 ? (
-                userCollection.map((collection) => (
-                  <option key={collection.address} value={collection}>
+                userCollection.map((collection, i) => (
+                  <option key={collection.address} value={i}>
                     {collection.name}
                   </option>
                 ))

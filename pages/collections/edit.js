@@ -3,7 +3,7 @@ import React from "react";
 import Router from "next/router";
 import { useWeb3React } from "@web3-react/core";
 import { uploadFileToCloudinary } from "../../utils/upload";
-import ApiClient from "../../utils/ApiClient";
+import ApiClient, { verifyUser } from "../../utils/ApiClient";
 import { useState } from "react";
 import LoadingUI from "../../components/LoadingUI";
 import NotificationUI from "../../components/Notification";
@@ -18,12 +18,17 @@ const EditCollection = () => {
   const { address } = router.query;
 
   React.useEffect(() => {
-    if (!isActive && address) {
-      Router.push(`/login?referrer=collections/edit?address=${address}`);
-    } else {
-      // login();
+    async function verifyCurrentUser() {
+      await verifyUser(account);
     }
-  }, [isActive, address]);
+    if (!isActive && address) {
+      Router.push(
+        `/login?referrer=collections/edit?address=${address}&needSign=true`
+      );
+    } else if (account) {
+      verifyCurrentUser();
+    }
+  }, [isActive, address, account]);
 
   const avatarFileInput = React.useRef();
   const bannerFileInput = React.useRef();
@@ -99,6 +104,7 @@ const EditCollection = () => {
   const [createError, setCreateError] = useState("");
 
   async function createCollection() {
+    await verifyUser(account);
     setCreateStatus("updating");
     try {
       let image = collectionForm.image;

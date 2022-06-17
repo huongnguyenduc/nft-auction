@@ -10,11 +10,13 @@ const {
   useIsActive,
   useProvider,
   useENSNames,
+  useAccount,
 } = hooks;
 
-export default function WalletConnectCard({ referrer }) {
+export default function WalletConnectCard({ referrer, needSign }) {
   const chainId = useChainId();
   const accounts = useAccounts();
+  const account = useAccount();
   const isActivating = useIsActivating();
 
   const isActive = useIsActive();
@@ -40,11 +42,13 @@ export default function WalletConnectCard({ referrer }) {
 
   return (
     <WalletContainer
+      needSign={needSign}
       connector={walletConnect}
       chainId={chainId}
       isActivating={isActivating}
       isActive={isActive}
       error={error}
+      account={account}
       setError={setError}
       accounts={accounts}
       provider={provider}

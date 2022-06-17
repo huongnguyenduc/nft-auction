@@ -11,7 +11,14 @@ import CollectionItemSkeleton from "../../components/CollectionItemSkeleton";
 const PAGE_SIZE = 6;
 
 const Collections = () => {
-  const { account: userAccount } = useWeb3React();
+  const { account: userAccount, isActive } = useWeb3React();
+  useEffect(() => {
+    if (!isActive) {
+      Router.push(`/login?referrer=collections`);
+    } else {
+      // login();
+    }
+  }, [isActive]);
   const { data, error, size, setSize } = useSWRInfinite(
     userAccount
       ? (index) => [
@@ -22,6 +29,7 @@ const Collections = () => {
       : null,
     axiosFetcher
   );
+
   const collections = data
     ? [].concat(...data?.map((response) => response?.data))
     : [];

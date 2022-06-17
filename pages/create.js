@@ -11,6 +11,7 @@ import NFTMarketplace from "../contracts/NFTMarketplace.json";
 import Image from "next/image";
 import { uploadFileToIPFS } from "../utils/upload";
 import ApiClient from "../utils/ApiClient";
+import { axiosFetcher } from "../utils/fetcher";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
@@ -28,18 +29,17 @@ export default function CreateItem() {
 
   useEffect(() => {
     async function getUserCollection() {
-      const userCollectionResponse = await ApiClient(account).get(
-        `/user/collections`
+      const userCollectionResponse = await axiosFetcher(
+        `user/${account}/collections`
       );
-      console.log("collection list", userCollectionResponse);
-      setUserCollection(userCollectionResponse?.data?.data);
+      setUserCollection(userCollectionResponse?.data);
       if (
-        userCollectionResponse?.data?.data &&
-        userCollectionResponse?.data?.data.length > 0
+        userCollectionResponse?.data &&
+        userCollectionResponse?.data.length > 0
       )
         updateFormInput({
           ...formInput,
-          collection: userCollectionResponse?.data?.data[0],
+          collection: userCollectionResponse?.data[0],
         });
     }
     if (!!isActive && !!account && !isActivating) {
@@ -66,7 +66,7 @@ export default function CreateItem() {
     const file = e.target.files[0];
     try {
       const url = await uploadFileToIPFS(file);
-      setFileUrl(url);
+      if (typeof url === "string") setFileUrl(url);
       setValidateImageError("");
     } catch (error) {
       setValidateImageError(error);

@@ -5,11 +5,13 @@ import ERC1155Contract from "../../contracts/UITToken1155.json";
 import Web3Modal from "web3modal";
 import Router from "next/router";
 import { useWeb3React } from "@web3-react/core";
-import { uploadFileToIPFS, uploadFileToCloudinary } from "../../utils/upload";
+import { uploadFileToCloudinary } from "../../utils/upload";
 import ApiClient from "../../utils/ApiClient";
 import { ethers } from "ethers";
 import { useState } from "react";
 import LoadingUI from "../../components/LoadingUI";
+import NotificationUI from "../../components/Notification";
+import { useToaster } from "rsuite";
 
 const marketplaceAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const verifySignatureContractAddress =
@@ -40,6 +42,8 @@ const CreateCollection = () => {
     logoImageError: "",
     nameError: "",
   });
+
+  const toaster = useToaster();
 
   function selectedAvatarFile(event) {
     if (event.target.files[0]) {
@@ -128,10 +132,23 @@ const CreateCollection = () => {
         }
       );
       setCreateStatus("created");
+      const successCode = toaster.push(
+        <NotificationUI
+          message="Create collection successfully."
+          type="success"
+        />,
+        { placement: "bottomStart" }
+      );
+      setTimeout(() => toaster.remove(successCode), 2500);
       console.log("create collection", createCollectionResponse);
     } catch (error) {
       setCreateStatus("adding");
       setCreateError(error.message);
+      const failureCode = toaster.push(
+        <NotificationUI message={error.message} type="error" />,
+        { placement: "bottomStart" }
+      );
+      setTimeout(() => toaster.remove(failureCode), 2500);
       console.log("Unknown error: ", error);
     }
   }

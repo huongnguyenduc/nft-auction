@@ -2,9 +2,17 @@ import React, { useState, useRef } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import { useWeb3React } from "@web3-react/core";
+import { uploadFileToCloudinary } from "../utils/upload";
+import LoadingUI from "../components/LoadingUI";
+import { useToaster } from "rsuite";
+import ApiClient from "../utils/ApiClient";
+import NotificationUI from "../components/Notification";
+import { useEffect } from "react";
+import { axiosFetcher } from "../utils/fetcher";
 
 const Setting = () => {
   const { account } = useWeb3React();
+  const toaster = useToaster();
   const avatarFileInput = useRef();
   const bannerFileInput = useRef();
   const [userForm, setUserForm] = useState({
@@ -15,7 +23,19 @@ const Setting = () => {
     imageURL: "",
     banner: "",
     bannerURL: "",
+    wallet: "",
   });
+  useEffect(() => {
+    async function getUser() {
+      const userData = await axiosFetcher(`user/${account}`);
+      if (userData?.data) {
+        setUserForm(userData.data);
+      }
+    }
+    if (account) {
+      getUser();
+    }
+  }, [account]);
   const [userFormError, setUserFormError] = React.useState({
     emailError: "",
   });
@@ -37,20 +57,59 @@ const Setting = () => {
       }));
     }
   }
+  function validateUserForm() {
+    let isValidated = true;
+    if (
+      userForm.email &&
+      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(
+        userForm.email
+      ) === false
+    ) {
+      setUserFormError((prevState) => ({
+        ...prevState,
+        emailError: "Email form is invalid",
+      }));
+      isValidated = false;
+    }
+    return isValidated;
+  }
+  const [updateStatus, setUpdateStatus] = useState("update");
   async function updateUser() {
+    setUpdateStatus("update");
     try {
-      const image = await uploadFileToIPFS(userForm.image);
-      const banner = await uploadFileToIPFS(userForm.banner);
-      const updateUserResponse = await ApiClient(account).post("/collection", {
+      setUpdateStatus("updating");
+      let image = userForm.image;
+      let banner = userForm.image;
+      if (userForm.imageURL) {
+        const { url } = await uploadFileToCloudinary(userForm.image);
+        image = url;
+      }
+      if (userForm.bannerURL) {
+        const { url } = await uploadFileToCloudinary(userForm.banner);
+        banner = url;
+      }
+      const updateUserResponse = await ApiClient(account).patch("/user", {
         name: userForm.name,
         image,
         banner,
         bio: userForm.description,
         email: userForm.email,
       });
-      console.log("create collection", updateUserResponse);
+      setUpdateStatus("updated");
+      const successCode = toaster.push(
+        <NotificationUI message="Update user successfully." type="success" />,
+        { placement: "bottomStart" }
+      );
+      setTimeout(() => toaster.remove(successCode), 2500);
+      console.log("Update user", updateUserResponse);
     } catch (error) {
+      setUpdateStatus("error");
       console.log("Unknown error: ", error);
+      const failureCode = toaster.push(
+        <NotificationUI message={error.message} type="error" />,
+        { placement: "bottomStart" }
+      );
+      setTimeout(() => toaster.remove(failureCode), 2500);
     }
   }
   return (
@@ -93,6 +152,13 @@ const Setting = () => {
                 id="username"
                 placeholder="Enter username"
                 className="border-2 rounded-lg p-3 w-full text-base mb-4"
+                value={userForm.username}
+                onChange={(e) => {
+                  setUserForm((state) => ({
+                    ...state,
+                    username: e.target.value,
+                  }));
+                }}
               />
               <p htmlFor="bio" className="font-semibold text-base mb-2">
                 Bio
@@ -101,6 +167,13 @@ const Setting = () => {
                 id="bio"
                 placeholder="Tell the world your story!"
                 className="border-2 rounded-lg p-3 w-full text-base mb-4"
+                value={userForm.bio}
+                onChange={(e) => {
+                  setUserForm((state) => ({
+                    ...state,
+                    bio: e.target.value,
+                  }));
+                }}
               />
               <p htmlFor="email" className="font-semibold text-base mb-2">
                 Email Address
@@ -108,18 +181,37 @@ const Setting = () => {
               <input
                 id="email"
                 placeholder="Tell the world your story!"
-                className="border-2 rounded-lg p-3 w-full text-base mb-4"
+                className="border-2 rounded-lg p-3 w-full text-base"
+                value={userForm.email}
+                onChange={(e) => {
+                  setUserForm((state) => ({
+                    ...state,
+                    email: e.target.value,
+                  }));
+                }}
               />
+              <p className="text-red-500 mt-2 mb-4">
+                {userFormError.emailError}
+              </p>
               <p htmlFor="wallet" className="font-semibold text-base mb-2">
                 Wallet Address
               </p>
               <input
                 id="wallet"
-                placeholder="0x70cfca35d339eb5c1cb6d8cd905ae019f324128a"
                 className="border-2 rounded-lg p-3 w-full text-base mb-4"
                 disabled
+                value={userForm.wallet}
               />
-              <button className="font-semibold bg-blue-500 text-white text-base rounded-xl px-6 py-4">
+
+              <button
+                onClick={() => {
+                  if (validateUserForm()) {
+                    updateUser();
+                  }
+                }}
+                className="font-semibold bg-blue-500 text-white text-base rounded-xl px-6 py-4"
+              >
+                {updateStatus === "updating" ? <LoadingUI /> : <></>}
                 Save
               </button>
             </div>
@@ -127,23 +219,80 @@ const Setting = () => {
               <p htmlFor="avatar" className="font-semibold text-base mb-2">
                 Profile Image
               </p>
-              <div className="w-[150px] h-[150px] rounded-[150px] mb-4 relative overflow-hidden">
-                <Image
-                  layout="fill"
-                  src="https://lh3.googleusercontent.com/_70_WkLyBXX9bpKfA1vzWAJM0samNsL13jwIKSl0Lh-jC2LdipKLKJi8fCZfGgDb8ljAyCm2dzYsj1ifg180hGxa-n0F9zHwFj8-EyI=s150"
-                  alt="user-avatar"
-                />
+              <input
+                id="avatarInput"
+                style={{ display: "none" }}
+                type="file"
+                ref={avatarFileInput}
+                accept="image/*"
+                onChange={selectedAvatarFile}
+              />
+              <div
+                onClick={() => avatarFileInput.current.click()}
+                className="w-[150px] h-[150px] rounded-[150px] mb-4 relative overflow-hidden cursor-pointer"
+              >
+                {userForm.imageURL ? (
+                  <div className="absolute rounded-[50%] overflow-hidden w-full h-full z-10">
+                    <Image
+                      layout="fill"
+                      src={userForm.imageURL}
+                      unoptimized={true}
+                      objectFit="cover"
+                      alt="user-avatar"
+                    />
+                  </div>
+                ) : userForm.image ? (
+                  <div className="absolute rounded-[50%] overflow-hidden w-full h-full z-10">
+                    <Image
+                      layout="fill"
+                      src={userForm.image}
+                      unoptimized={true}
+                      objectFit="cover"
+                      alt="user-avatar"
+                    />
+                  </div>
+                ) : (
+                  <></>
+                )}
               </div>
               <p htmlFor="banner" className="font-semibold text-base mb-2">
                 Profile Banner
               </p>
-              <div className="max-w-[150px] min-h-[130px] h-[130px] rounded-xl mb-4 overflow-hidden relative">
-                <Image
-                  layout="fill"
-                  objectFit="cover"
-                  src="https://lh3.googleusercontent.com/_70_WkLyBXX9bpKfA1vzWAJM0samNsL13jwIKSl0Lh-jC2LdipKLKJi8fCZfGgDb8ljAyCm2dzYsj1ifg180hGxa-n0F9zHwFj8-EyI=s150"
-                  alt="user-banner"
-                />
+              <input
+                id="bannerInput"
+                style={{ display: "none" }}
+                type="file"
+                ref={bannerFileInput}
+                accept="image/*"
+                onChange={selectedBannerFile}
+              />
+              <div
+                onClick={() => bannerFileInput.current.click()}
+                className="max-w-[150px] min-h-[130px] h-[130px] rounded-xl mb-4 overflow-hidden relative cursor-pointer"
+              >
+                {userForm.bannerURL ? (
+                  <div className="absolute rounded-[50%] overflow-hidden w-full h-full z-10">
+                    <Image
+                      layout="fill"
+                      src={userForm.bannerURL}
+                      unoptimized={true}
+                      objectFit="cover"
+                      alt="user-banner"
+                    />
+                  </div>
+                ) : userForm.banner ? (
+                  <div className="absolute rounded-[50%] overflow-hidden w-full h-full z-10">
+                    <Image
+                      layout="fill"
+                      src={userForm.banner}
+                      unoptimized={true}
+                      objectFit="cover"
+                      alt="user-banner"
+                    />
+                  </div>
+                ) : (
+                  <></>
+                )}
               </div>
             </div>
             <div className="flex-1"></div>

@@ -132,8 +132,8 @@ function NFTDetail() {
           <NotificationUI message="Cancel list successfully." type="success" />,
           { placement: "bottomStart" }
         );
-        await fetchNFT();
         setTimeout(() => toaster.remove(successCode), 2500);
+        await fetchNFT();
       } catch (error) {
         setHasCancelListRequesting(false);
         const failureCode = toaster.push(

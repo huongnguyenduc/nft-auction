@@ -1,9 +1,20 @@
 import { create as ipfsHttpClient } from "ipfs-http-client";
 const cloudinaryApiLink = process.env.NEXT_PUBLIC_CLOUDINARY_API_URL;
-const client = ipfsHttpClient("https://ipfs.infura.io:5001/api/v0");
+// const projectId = process.env.NEXT_PUBLIC_IPFS_PROJECT_ID;
+// const projectSecret = process.env.NEXT_PUBLIC_IPFS_PROJECT_SECRET;
+// const authorization = () =>
+//   "Basic " + Buffer.from(projectId + ":" + projectSecret).toString("base64");
+const client = ipfsHttpClient("http://ipfs.infura.io:5001/api/v0");
 
 export async function uploadFileToIPFS(file) {
-  const added = await client.add(file);
+  // {
+  // url:
+  //   ,
+  //   headers: { authorization: authorization() },
+  // }
+  const added = await client.add(file, {
+    progress: (prog) => console.log(`received: ${prog}`),
+  });
   const url = `https://ipfs.infura.io/ipfs/${added.path}`;
   return url;
 }

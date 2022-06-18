@@ -31,7 +31,6 @@ const dateOptions = {
 };
 
 const initialNFT = {
-  nftContract: "",
   seller: "",
   owner: "",
   price: "",
@@ -654,7 +653,7 @@ function NFTDetail() {
                     <p className="text-sm font-medium text-blue-500 cursor-pointer">
                       <a
                         target="_blank"
-                        href={`https://rinkeby.etherscan.io/address/${nftData.nftContract}`}
+                        href={`https://rinkeby.etherscan.io/address/${nftData.collectionAddress}`}
                         rel="noopener noreferrer"
                       >
                         {getShortAddress(

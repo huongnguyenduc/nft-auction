@@ -501,15 +501,19 @@ export default function ListNFT() {
             </div>
             <div className="flex-1">
               <p className="text-xl font-medium">Preview</p>
-              <div className="border relative shadow rounded-xl overflow-hidden transition ease-out hover:shadow-lg hover:-translate-y-0.5 w-fit">
-                <Image
-                  src={image}
-                  alt="nft-preview-image"
-                  width={350}
-                  height={350}
-                  objectFit="cover"
-                />
-                <div className="p-4">
+              <div className="border w-[350px] relative shadow rounded-xl overflow-hidden transition ease-out hover:shadow-lg hover:-translate-y-0.5">
+                {image ? (
+                  <Image
+                    src={image}
+                    alt="nft-preview-image"
+                    width={350}
+                    height={350}
+                    objectFit="cover"
+                  />
+                ) : (
+                  <></>
+                )}
+                <div className="p-4 w-[100%]">
                   <div className="flex justify-between">
                     <p className="text-md font-semibold">{name}</p>
                     <div className="flex">
@@ -523,7 +527,13 @@ export default function ListNFT() {
                     </div>
                   </div>
                   <div style={{ height: "50px", overflow: "hidden" }}>
-                    <p className="text-gray-400 text-md">{description}</p>
+                    <p className="text-gray-400 text-md">
+                      {description
+                        ? description.length < 80
+                          ? description
+                          : description.substring(0, 80) + " ..."
+                        : ""}
+                    </p>
                   </div>
                 </div>
               </div>

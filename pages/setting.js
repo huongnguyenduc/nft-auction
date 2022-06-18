@@ -283,7 +283,7 @@ const Setting = () => {
                 className="max-w-[150px] min-h-[130px] h-[130px] rounded-xl mb-4 overflow-hidden relative cursor-pointer"
               >
                 {userForm.bannerURL ? (
-                  <div className="absolute rounded-[50%] overflow-hidden w-full h-full z-10">
+                  <div className="absolute rounded-xl overflow-hidden w-full h-full z-10">
                     <Image
                       layout="fill"
                       src={userForm.bannerURL}
@@ -293,7 +293,7 @@ const Setting = () => {
                     />
                   </div>
                 ) : userForm.banner ? (
-                  <div className="absolute rounded-[50%] overflow-hidden w-full h-full z-10">
+                  <div className="absolute rounded-xl overflow-hidden w-full h-full z-10">
                     <Image
                       layout="fill"
                       src={userForm.banner}
